@@ -105,7 +105,7 @@ class MiniChess:
     
     # Check if the king is on the board
     def king_exists(self, game_state):
-        for row in game_state["board"];
+        for row in game_state["board"]:
             if "wK" in row or "bK" in row:
                 return True
             return False
