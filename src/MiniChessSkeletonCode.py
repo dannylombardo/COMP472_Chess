@@ -6,6 +6,7 @@ import argparse
 class MiniChess:
     def __init__(self):
         self.current_game_state = self.init_board()
+        self.move_counter = 0
 
     """
     Initialize the board
@@ -90,9 +91,17 @@ class MiniChess:
         game_state["board"][end_row][end_col] = piece
         game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
 
-        if captured_piece:
-            print(f"{game_state['turn']} wins!")
-            exit (1)
+        if captured_piece != '.':
+            self.move_counter = 0
+            if captured_piece in ('bk', 'wK'):
+                print(f"{game_state['turn']} wins!")
+                exit(1)
+        else:
+            self.move_counter += 1
+
+        if self.move_counter >= 10:
+            print("Game is a draw!")
+            exit(1)
 
         return game_state
         
