@@ -84,12 +84,31 @@ class MiniChess:
         end = move[1]
         start_row, start_col = start
         end_row, end_col = end
+        captured_piece = self.captured_piece(game_state, end)
         piece = game_state["board"][start_row][start_col]
         game_state["board"][start_row][start_col] = '.'
         game_state["board"][end_row][end_col] = piece
         game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
 
+        if captured_piece:
+            print(f"{game_state['turn']} wins!")
+            exit (1)
+
         return game_state
+        
+    def captured_piece(self, game_state, end):
+        end_row, end_col = end
+        piece = game_state["board"][end_row][end_col]
+        if piece == 'bK' or piece == 'wK':
+            return piece
+        return None
+    
+    # Check if the king is on the board
+    def king_exists(self, game_state):
+        for row in game_state["board"];
+            if "wK" in row or "bK" in row:
+                return True
+            return False
 
     """
     Parse the input string and modify it into board coordinates
