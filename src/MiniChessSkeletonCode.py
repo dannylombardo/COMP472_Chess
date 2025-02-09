@@ -61,14 +61,13 @@ class MiniChess:
         end_row, end_col = end
         piece = game_state["board"][start_row][start_col]
 
-        if piece == '.':  # No piece to move
-            return "Blank"
+        if piece == '.': # No piece to move
+            return False
 
-        piece_type = piece[1]
-        color = 'white' if piece[0] == 'w' else 'black'
+        piece_color = 'white' if piece[0] == 'w' else 'black'
 
-        if color != game_state["turn"]:  # Check if it's the correct turn
-            return "Wrong Player"
+        if piece_color != game_state["turn"]: # Check if it's the correct turn
+            return False
 
         valid_moves = self.valid_moves(game_state)
 
