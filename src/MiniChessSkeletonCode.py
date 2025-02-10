@@ -2,6 +2,7 @@ import math
 import copy
 import time
 import argparse
+import sys, traceback
 
 class MiniChess:
     def __init__(self):
@@ -178,19 +179,142 @@ class MiniChess:
     """
 
     def make_move(self, game_state, move):
-        start = move[0]
-        end = move[1]
-        start_row, start_col = start
-        end_row, end_col = end
+        start, end = move  # Define start and end here
         captured_piece = self.captured_piece(game_state, end)
-        piece = game_state["board"][start_row][start_col]
-        game_state["board"][start_row][start_col] = '.'
-        game_state["board"][end_row][end_col] = piece
-        game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
 
+        # ----------- Scenario 1: Moves a piece from one location to the other as well as when a piece is removed from the game(for general cases ONLY) -----------
+
+        moveCodeLetter = 'A'                    # Initialized to random letter (used for the logger notation)
+        moveCodeNumber = '1'                    # Initialized to random number (used for the logger notation)
+        eliminated = False                      # Initialized to a piece not being eliminated
+        pawnToQueen = False                     # Initialized switch that checks if pawn has become queen
+
+        start_row, start_col = start            # the x position of the coordinate goes to start_row and the y position goes start_col
+        end_row, end_col = end                  # this step isn't needed but just for easier readability
+        
+        pieceEliminated = game_state["board"][0][4]                     # random spot (just to initialize)
+
+        piece = game_state["board"][start_row][start_col]               # copies the piece that is being moved
+        game_state["board"][start_row][start_col] = '.'                 # replaces that initial spot with a '.'
+
+        if game_state["board"][end_row][end_col] != '.':
+            pieceEliminated = game_state["board"][end_row][end_col]     # keeps track of the eliminated piece
+            eliminated = True                                           # turns on the switch (that piece has been eliminated in this turn)
+
+        game_state["board"][end_row][end_col] = piece                   # updates the piece at the end location
+
+
+        if end_row == 0:
+            moveCodeNumber = '5'              # Initializing the code for the number to be used in the logger (since they dont have the same numbering and lettering)
+        elif end_row == 1:
+            moveCodeNumber = '4'
+        elif end_row == 2:
+            moveCodeNumber = '3'
+        elif end_row == 3:
+            moveCodeNumber = '2'
+        elif end_row == 4:
+            moveCodeNumber = '1'
+
+        if end_col == 0:
+            moveCodeLetter = 'A'              # Initializing the code for the letter to be used in the logger (since they dont have the same numbering and lettering)
+        elif end_col == 1:
+            moveCodeLetter = 'B'
+        elif end_col == 2:
+            moveCodeLetter = 'C'
+        elif end_col == 3:
+            moveCodeLetter = 'D'
+        elif end_col == 4:
+            moveCodeLetter = 'E'
+        
+
+        if game_state["turn"] == "white":                               # switches the turn of the player
+            game_state["turn"] = "black"
+        else:
+            game_state["turn"] = "white"
+        
+
+        # ----------- Scenario 2: If a white pawn moves to the last row, it becomes a white queen -----------
+
+        if game_state["board"][0][0] == 'wp':
+            game_state["board"][0][0] = 'wQ'                # becomes a queen (for white)
+            pawnToQueen = True
+
+        elif game_state["board"][0][1] == 'wp':
+            game_state["board"][0][1] = 'wQ'                # becomes a queen (for white)
+            pawnToQueen = True
+
+        elif game_state["board"][0][2] == 'wp':
+            game_state["board"][0][2] = 'wQ'                # becomes a queen (for white)
+            pawnToQueen = True
+
+        elif game_state["board"][0][3] == 'wp':
+            game_state["board"][0][3] = 'wQ'                # becomes a queen (for white)
+            pawnToQueen = True
+
+        elif game_state["board"][0][4] == 'wp':
+            game_state["board"][0][4] = 'wQ'                # becomes a queen (for white)
+            pawnToQueen = True
+
+        
+        # ----------- Scenario 3: If a black pawn moves to the last row, it becomes a black queen -----------
+
+
+        if game_state["board"][4][0] == 'bp':
+            game_state["board"][4][0] = 'bQ'                # becomes a queen (for black)
+            pawnToQueen = True
+
+        elif game_state["board"][4][1] == 'bp':
+            game_state["board"][4][1] = 'bQ'                # becomes a queen (for black)
+            pawnToQueen = True
+
+        elif game_state["board"][4][2] == 'bp':
+            game_state["board"][4][2] = 'bQ'                # becomes a queen (for black)
+            pawnToQueen = True
+
+        elif game_state["board"][4][3] == 'bp':
+            game_state["board"][4][3] = 'bQ'                # becomes a queen (for black)
+            pawnToQueen = True
+
+        elif game_state["board"][4][4] == 'bp':
+            game_state["board"][4][4] = 'bQ'                # becomes a queen (for black)
+            pawnToQueen = True
+
+
+        # ----------- Scenario 4: If the white king is eliminated -----------
+
+        if pieceEliminated == 'wK':
+            with open("COMP472_Project.txt", "a") as f:
+                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and the white king has been eliminated ' + '\n' + 'GAME OVER: BLACK WINS')
+            print("Black wins!")
+            sys.exit(0)
+
+        # ----------- Scenario 5: If the black king is eliminated -----------
+
+        if pieceEliminated == 'bK':
+            with open("COMP472_Project.txt", "a") as f:
+                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and the black king has been eliminated ' + '\n' + 'GAME OVER: WHITE WINS')
+            print("White wins!")
+            sys.exit(0)
+
+        # ----------- Game / Move logger (Tracks the moves in the game) -----------
+
+        
+        if eliminated == True:
+            with open("COMP472_Project.txt", "a") as f:
+                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and ' + pieceEliminated + ' is now eliminated from the game \n')
+        elif pawnToQueen == False:
+            with open("COMP472_Project.txt", "a") as f:
+                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + '\n')
+        else:
+            with open("COMP472_Project.txt", "a") as f:
+                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and it is now become a queen' + '\n')
+
+        pawnToQueen = False                                 # reset the pawnToQueen to false so that it can be checked for in the future moves
+        eliminated = False                                  # reset the eliminated to false so that it can check for the future moves
+        
         if captured_piece != '.':
             self.move_counter = 0
-            if captured_piece in ('bk', 'wK'):
+            if captured_piece in ('bK', 'wK'):
                 print(f"{game_state['turn']} wins!")
                 exit(1)
         else:
@@ -205,9 +329,7 @@ class MiniChess:
     def captured_piece(self, game_state, end):
         end_row, end_col = end
         piece = game_state["board"][end_row][end_col]
-        if piece == 'bK' or piece == 'wK':
-            return piece
-        return None
+        return piece if piece != '.' else None
     
     # Check if the king is on the board
     def king_exists(self, game_state):
