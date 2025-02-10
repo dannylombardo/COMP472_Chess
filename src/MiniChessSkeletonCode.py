@@ -16,6 +16,7 @@ class MiniChess:
     Returns:
         - state: A dictionary representing the state of the game
     """
+
     def init_board(self):
         state = {
                 "board": 
@@ -36,26 +37,42 @@ class MiniChess:
     Returns:
         - None
     """
+
     def display_board(self, game_state):
         print()
         for i, row in enumerate(game_state["board"], start=1):
-            print(str(6-i) + "  " + ' '.join(piece.rjust(3) for piece in row))
+            print(str(6 - i) + "  " + ' '.join(piece.rjust(3) for piece in row))
         print()
         print("     A   B   C   D   E")
         print()
 
     """
     Check if the move is valid    
-    
+
     Args: 
         - game_state:   dictionary | Dictionary representing the current game state
         - move          tuple | the move which we check the validity of ((start_row, start_col),(end_row, end_col))
     Returns:
         - boolean representing the validity of the move
     """
+
     def is_valid_move(self, game_state, move):
-        # Check if move is in list of valid moves
-        return True
+        start, end = move
+        start_row, start_col = start
+        end_row, end_col = end
+        piece = game_state["board"][start_row][start_col]
+
+        if piece == '.': # No piece to move
+            return False
+
+        piece_color = 'white' if piece[0] == 'w' else 'black'
+
+        if piece_color != game_state["turn"]: # Check if it's the correct turn
+            return False
+
+        valid_moves = self.valid_moves(game_state)
+
+        return move in valid_moves
 
     """
     Returns a list of valid moves
@@ -65,11 +82,90 @@ class MiniChess:
     Returns:
         - valid moves:   list | A list of nested tuples corresponding to valid moves [((start_row, start_col),(end_row, end_col)),((start_row, start_col),(end_row, end_col))]
     """
+
     def valid_moves(self, game_state):
-        # Return a list of all the valid moves.
-        # Implement basic move validation
-        # Check for out-of-bounds, correct turn, move legality, etc
-        return
+        moves = []
+        board = game_state["board"]
+        turn = game_state["turn"]
+
+        for row in range(5):
+            for col in range(5):
+                piece = board[row][col]
+                if piece != '.' and ((turn == "white" and piece[0] == 'w') or (turn == "black" and piece[0] == 'b')):
+                    moves.extend(self.get_piece_moves(board, row, col, piece))
+
+        return moves
+
+    def get_piece_moves(self, board, row, col, piece):
+        piece_type = piece[1]
+        if piece_type == 'K':
+            return self.king_moves(board, row, col)
+        elif piece_type == 'Q':
+            return self.queen_moves(board, row, col)
+        elif piece_type == 'B':
+            return self.bishop_moves(board, row, col)
+        elif piece_type == 'N':
+            return self.knight_moves(board, row, col)
+        elif piece_type == 'p':
+            return self.pawn_moves(board, row, col, piece[0])
+        return []
+
+    def king_moves(self, board, row, col):
+        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        return self.get_moves_in_directions(board, row, col, directions, limit=1)
+
+    def queen_moves(self, board, row, col):
+        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        return self.get_moves_in_directions(board, row, col, directions)
+
+    def bishop_moves(self, board, row, col):
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        return self.get_moves_in_directions(board, row, col, directions)
+
+    def knight_moves(self, board, row, col):
+        moves = []
+        possible_jumps = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
+        for dr, dc in possible_jumps:
+            new_row, new_col = row + dr, col + dc
+            if 0 <= new_row < 5 and 0 <= new_col < 5 and (
+                    board[new_row][new_col] == '.' or board[new_row][new_col][0] != board[row][col][0]):
+                moves.append(((row, col), (new_row, new_col)))
+        return moves
+
+    def pawn_moves(self, board, row, col, color):
+        moves = []
+        direction = -1 if color == 'w' else 1
+        new_row = row + direction
+
+        if 0 <= new_row < 5:
+            # Forward move (only if the destination is empty)
+            if board[new_row][col] == '.':
+                moves.append(((row, col), (new_row, col)))
+
+            # Capture diagonally
+            for new_col in [col - 1, col + 1]:
+                if 0 <= new_col < 5 and board[new_row][new_col] != '.' and board[new_row][new_col][0] != color:
+                    moves.append(((row, col), (new_row, new_col)))
+
+        return moves
+
+    def get_moves_in_directions(self, board, row, col, directions, limit=5):
+        moves = []
+        piece_color = board[row][col][0]
+        for dr, dc in directions:
+            for step in range(1, limit + 1):
+                new_row, new_col = row + dr * step, col + dc * step
+                if 0 <= new_row < 5 and 0 <= new_col < 5:
+                    if board[new_row][new_col] == '.':
+                        moves.append(((row, col), (new_row, new_col)))
+                    elif board[new_row][new_col][0] != piece_color:
+                        moves.append(((row, col), (new_row, new_col)))
+                        break  # Stop moving in this direction if capturing an enemy piece
+                    else:
+                        break  # Stop if blocked by own piece
+                else:
+                    break  # Stop if out of bounds
+        return moves
 
     """
     Modify to board to make a move
@@ -80,6 +176,7 @@ class MiniChess:
     Returns:
         - game_state:   dictionary | Dictionary representing the modified game state
     """
+
     def make_move(self, game_state, move):
         start = move[0]
         end = move[1]
