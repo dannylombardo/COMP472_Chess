@@ -25,3 +25,5 @@ wK has moved to E3
 bK has moved to A3
 wK has moved to E4
 bK has moved to A4
+wK has moved to E2
+bK has moved to A4

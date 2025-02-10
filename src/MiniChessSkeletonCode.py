@@ -329,7 +329,7 @@ class MiniChess:
     def captured_piece(self, game_state, end):
         end_row, end_col = end
         piece = game_state["board"][end_row][end_col]
-        return piece if piece != '.' else None
+        return piece if piece != '.' else '.'
     
     # Check if the king is on the board
     def king_exists(self, game_state):
