@@ -4,6 +4,8 @@ import time
 import argparse
 import sys, traceback
 
+NumOfMoves = 0
+
 class MiniChess:
     def __init__(self):
         self.current_game_state = self.init_board()
@@ -284,7 +286,7 @@ class MiniChess:
 
         if pieceEliminated == 'wK':
             with open("COMP472_Project.txt", "a") as f:
-                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and the white king has been eliminated ' + '\n' + 'GAME OVER: BLACK WINS')
+                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and the white king has been eliminated ' + '\n' + 'GAME OVER: BLACK WINS \n')
             print("Black wins!")
             sys.exit(0)
 
@@ -292,9 +294,10 @@ class MiniChess:
 
         if pieceEliminated == 'bK':
             with open("COMP472_Project.txt", "a") as f:
-                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and the black king has been eliminated ' + '\n' + 'GAME OVER: WHITE WINS')
+                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and the black king has been eliminated ' + '\n' + 'GAME OVER: WHITE WINS \n')
             print("White wins!")
             sys.exit(0)
+
 
         # ----------- Game / Move logger (Tracks the moves in the game) -----------
 
@@ -311,18 +314,29 @@ class MiniChess:
 
         pawnToQueen = False                                 # reset the pawnToQueen to false so that it can be checked for in the future moves
         eliminated = False                                  # reset the eliminated to false so that it can check for the future moves
-        
+
         if captured_piece != '.':
             self.move_counter = 0
+            NumOfMoves = self.move_counter
             if captured_piece in ('bK', 'wK'):
                 print(f"{game_state['turn']} wins!")
                 exit(1)
         else:
             self.move_counter += 1
+            NumOfMoves = self.move_counter
 
-        if self.move_counter >= 10:
+        if self.move_counter >= 13:
             print("Game is a draw!")
             exit(1)
+
+        # ----------- Scenario 6: Detect Draw -----------
+
+        if NumOfMoves >= 10:
+            with open("COMP472_Project.txt", "a") as f:
+                f.write('GAME OVER: DRAW \n')
+            print("No one won... It's a draw!")
+            sys.exit(0)
+
 
         return game_state
         
@@ -364,7 +378,25 @@ class MiniChess:
         - None
     """
     def play(self):
-        print("Welcome to Mini Chess! Enter moves as 'B2 B3'. Type 'exit' to quit.")
+        print("Welcome to Mini Chess!")
+
+        print("Choose the mode:"
+              "\n1. Player vs Player"
+              "\n2. Player vs AI"
+              "\n3. AI vs AI")
+        mode = input("Enter the mode number: ")
+        if mode == '1':
+            print("Player vs Player mode selected.")
+        elif mode == '2':
+            print("AI CPU not implemented yet. Exiting game.")
+            exit(1)
+        elif mode == '3':
+            print("AI CPU not implemented yet. Exiting game.")
+            exit(1)
+        else:
+            print("Invalid mode. Exiting game.")
+            exit(1)
+
         while True:
             self.display_board(self.current_game_state)
             move = input(f"{self.current_game_state['turn'].capitalize()} to move: ")
