@@ -5,11 +5,14 @@ import argparse
 import sys, traceback
 
 NumOfMoves = 0
+WhiteMoveCounter = 0
+BlackMoveCounter = 0
 
 class MiniChess:
     def __init__(self):
         self.current_game_state = self.init_board()
         self.move_counter = 0
+
 
     """
     Initialize the board
@@ -86,7 +89,11 @@ class MiniChess:
         - valid moves:   list | A list of nested tuples corresponding to valid moves [((start_row, start_col),(end_row, end_col)),((start_row, start_col),(end_row, end_col))]
     """
 
+    
+
     def valid_moves(self, game_state):
+        global WhiteMoveCounter
+        global BlackMoveCounter
         moves = []
         board = game_state["board"]
         turn = game_state["turn"]
@@ -96,6 +103,13 @@ class MiniChess:
                 piece = board[row][col]
                 if piece != '.' and ((turn == "white" and piece[0] == 'w') or (turn == "black" and piece[0] == 'b')):
                     moves.extend(self.get_piece_moves(board, row, col, piece))
+                    
+        if(turn == "white"):
+            WhiteMoveCounter += 1
+            print("White Move Counter: " + str(WhiteMoveCounter))
+        else:
+            BlackMoveCounter += 1
+            print("Black Move Counter: " + str(BlackMoveCounter))
 
         return moves
 
@@ -287,7 +301,7 @@ class MiniChess:
         if pieceEliminated == 'wK':
             with open("COMP472_Project.txt", "a") as f:
                 f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and the white king has been eliminated ' + '\n' + 'GAME OVER: BLACK WINS \n')
-            print("Black wins!")
+            print("Black wins!" + str(BlackMoveCounter) + " moves")
             sys.exit(0)
 
         # ----------- Scenario 5: If the black king is eliminated -----------
@@ -295,7 +309,7 @@ class MiniChess:
         if pieceEliminated == 'bK':
             with open("COMP472_Project.txt", "a") as f:
                 f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and the black king has been eliminated ' + '\n' + 'GAME OVER: WHITE WINS \n')
-            print("White wins!")
+            print("White wins!" + str(WhiteMoveCounter) + " moves")
             sys.exit(0)
 
 
@@ -325,7 +339,7 @@ class MiniChess:
             self.move_counter += 1
             NumOfMoves = self.move_counter
 
-        if self.move_counter >= 13:
+        if self.move_counter >= 10:
             print("Game is a draw!")
             exit(1)
 
@@ -400,6 +414,7 @@ class MiniChess:
         while True:
             self.display_board(self.current_game_state)
             move = input(f"{self.current_game_state['turn'].capitalize()} to move: ")
+            
             if move.lower() == 'exit':
                 print("Game exited.")
                 exit(1)
