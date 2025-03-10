@@ -7,6 +7,7 @@ import sys, traceback
 NumOfMoves = 0
 WhiteMoveCounter = 0
 BlackMoveCounter = 0
+TIME_LIMIT = 5  # Time limit in seconds for the AI to make a move
 
 class MiniChess:
     def __init__(self):
@@ -92,8 +93,6 @@ class MiniChess:
     
 
     def valid_moves(self, game_state):
-        global WhiteMoveCounter
-        global BlackMoveCounter
         moves = []
         board = game_state["board"]
         turn = game_state["turn"]
@@ -103,13 +102,6 @@ class MiniChess:
                 piece = board[row][col]
                 if piece != '.' and ((turn == "white" and piece[0] == 'w') or (turn == "black" and piece[0] == 'b')):
                     moves.extend(self.get_piece_moves(board, row, col, piece))
-                    
-        if(turn == "white"):
-            WhiteMoveCounter += 1
-            print("White Move Counter: " + str(WhiteMoveCounter))
-        else:
-            BlackMoveCounter += 1
-            print("Black Move Counter: " + str(BlackMoveCounter))
 
         return moves
 
@@ -194,7 +186,11 @@ class MiniChess:
         - game_state:   dictionary | Dictionary representing the modified game state
     """
 
-    def make_move(self, game_state, move):
+    def make_move(self, game_state, move, log_move=True):
+        global WhiteMoveCounter
+        global BlackMoveCounter
+        global NumOfMoves
+
         start, end = move  # Define start and end here
         captured_piece = self.captured_piece(game_state, end)
 
@@ -316,28 +312,26 @@ class MiniChess:
         # ----------- Game / Move logger (Tracks the moves in the game) -----------
 
         
-        if eliminated == True:
-            with open("COMP472_Project.txt", "a") as f:
-                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and ' + pieceEliminated + ' is now eliminated from the game \n')
-        elif pawnToQueen == False:
-            with open("COMP472_Project.txt", "a") as f:
-                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + '\n')
-        else:
-            with open("COMP472_Project.txt", "a") as f:
-                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and it is now become a queen' + '\n')
+        if log_move:
+            if eliminated == True:
+                with open("COMP472_Project.txt", "a") as f:
+                    f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and ' + pieceEliminated + ' is now eliminated from the game \n')
+            elif pawnToQueen == False:
+                with open("COMP472_Project.txt", "a") as f:
+                    f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + '\n')
+            else:
+                with open("COMP472_Project.txt", "a") as f:
+                    f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and it is now become a queen' + '\n')
 
         pawnToQueen = False                                 # reset the pawnToQueen to false so that it can be checked for in the future moves
         eliminated = False                                  # reset the eliminated to false so that it can check for the future moves
 
         if captured_piece != '.':
             self.move_counter = 0
-            NumOfMoves = self.move_counter
-            if captured_piece in ('bK', 'wK'):
-                print(f"{game_state['turn']} wins!")
-                exit(1)
         else:
             self.move_counter += 1
-            NumOfMoves = self.move_counter
+
+        NumOfMoves = self.move_counter
 
         if self.move_counter >= 10:
             print("Game is a draw!")
@@ -351,6 +345,15 @@ class MiniChess:
             print("No one won... It's a draw!")
             sys.exit(0)
 
+        # Increment move counters only during actual game moves
+        if game_state["turn"] == "white":
+            WhiteMoveCounter += 1
+            with open("COMP472_Project.txt", "a") as f:
+                f.write("White Move Counter: " + str(WhiteMoveCounter) + "\n")
+        else:
+            BlackMoveCounter += 1
+            with open("COMP472_Project.txt", "a") as f:
+                f.write("Black Move Counter: " + str(BlackMoveCounter) + "\n")
 
         return game_state
         
@@ -402,29 +405,72 @@ class MiniChess:
         if mode == '1':
             print("Player vs Player mode selected.")
         elif mode == '2':
-            print("AI CPU not implemented yet. Exiting game.")
-            exit(1)
+            print("Player vs AI mode selected.")
         elif mode == '3':
-            print("AI CPU not implemented yet. Exiting game.")
-            exit(1)
+            print("AI vs AI mode selected.")
         else:
             print("Invalid mode. Exiting game.")
             exit(1)
 
         while True:
             self.display_board(self.current_game_state)
-            move = input(f"{self.current_game_state['turn'].capitalize()} to move: ")
-            
-            if move.lower() == 'exit':
-                print("Game exited.")
-                exit(1)
-
-            move = self.parse_input(move)
-            if not move or not self.is_valid_move(self.current_game_state, move):
-                print("Invalid move. Try again.")
-                continue
+            if mode == '1' or (mode == '2' and self.current_game_state['turn'] == 'white'):
+                move = input(f"{self.current_game_state['turn'].capitalize()} to move: ")
+                if move.lower() == 'exit':
+                    print("Game exited.")
+                    exit(1)
+                move = self.parse_input(move)
+                if not move or not self.is_valid_move(self.current_game_state, move):
+                    print("Invalid move. Try again.")
+                    continue
+            else:
+                start_time = time.time()
+                move = self.get_best_move(self.current_game_state, start_time)
+                if move is None:
+                    print(f"AI ({self.current_game_state['turn']}) ran out of time and loses!")
+                    exit(1)
+                print(f"AI ({self.current_game_state['turn']}) move: {move}")
 
             self.make_move(self.current_game_state, move)
+
+    def get_best_move(self, game_state, start_time):
+        valid_moves = self.valid_moves(game_state)
+        best_move = None
+        best_score = -math.inf if game_state['turn'] == 'white' else math.inf
+
+        for move in valid_moves:
+            if time.time() - start_time > TIME_LIMIT:
+                return None  # AI ran out of time
+            new_game_state = copy.deepcopy(game_state)
+            self.make_move(new_game_state, move, log_move=False)
+            score = self.evaluate_board(new_game_state)
+            if game_state['turn'] == 'white' and score > best_score:
+                best_score = score
+                best_move = move
+            elif game_state['turn'] == 'black' and score < best_score:
+                best_score = score
+                best_move = move
+
+        return best_move
+
+    def evaluate_board(self, game_state):
+        piece_values = {
+            'wp': 1, 'wB': 3, 'wN': 3, 'wQ': 9, 'wK': 999,
+            'bp': 1, 'bB': 3, 'bN': 3, 'bQ': 9, 'bK': 999
+        }
+        
+        white_score = 0
+        black_score = 0
+        
+        for row in game_state["board"]:
+            for piece in row:
+                if piece in piece_values:
+                    if piece[0] == 'w':
+                        white_score += piece_values[piece]
+                    else:
+                        black_score += piece_values[piece]
+        
+        return white_score - black_score
 
 if __name__ == "__main__":
     game = MiniChess()
