@@ -12,38 +12,22 @@ TIME_LIMIT = 5  # Time limit in seconds for the AI to make a move
 class MiniChess:
     def __init__(self):
         self.current_game_state = self.init_board()
+        self.new_game_state = self.init_board()
+
         self.move_counter = 0
-
-
-    """
-    Initialize the board
-
-    Args:
-        - None
-    Returns:
-        - state: A dictionary representing the state of the game
-    """
+        self.ai_color = None
 
     def init_board(self):
         state = {
-                "board": 
+            "board":
                 [['bK', 'bQ', 'bB', 'bN', '.'],
-                ['.', '.', 'bp', 'bp', '.'],
-                ['.', '.', '.', '.', '.'],
-                ['.', 'wp', 'wp', '.', '.'],
-                ['.', 'wN', 'wB', 'wQ', 'wK']],
-                "turn": 'white',
-                }
+                 ['.', '.', 'bp', 'bp', '.'],
+                 ['.', '.', '.', '.', '.'],
+                 ['.', 'wp', 'wp', '.', '.'],
+                 ['.', 'wN', 'wB', 'wQ', 'wK']],
+            "turn": 'white',
+        }
         return state
-
-    """
-    Prints the board
-    
-    Args:
-        - game_state: Dictionary representing the current game state
-    Returns:
-        - None
-    """
 
     def display_board(self, game_state):
         print()
@@ -53,44 +37,23 @@ class MiniChess:
         print("     A   B   C   D   E")
         print()
 
-    """
-    Check if the move is valid    
-
-    Args: 
-        - game_state:   dictionary | Dictionary representing the current game state
-        - move          tuple | the move which we check the validity of ((start_row, start_col),(end_row, end_col))
-    Returns:
-        - boolean representing the validity of the move
-    """
-
     def is_valid_move(self, game_state, move):
         start, end = move
         start_row, start_col = start
         end_row, end_col = end
         piece = game_state["board"][start_row][start_col]
 
-        if piece == '.': # No piece to move
+        if piece == '.':  # No piece to move
             return False
 
         piece_color = 'white' if piece[0] == 'w' else 'black'
 
-        if piece_color != game_state["turn"]: # Check if it's the correct turn
+        if piece_color != game_state["turn"]:  # Check if it's the correct turn
             return False
 
         valid_moves = self.valid_moves(game_state)
 
         return move in valid_moves
-
-    """
-    Returns a list of valid moves
-
-    Args:
-        - game_state:   dictionary | Dictionary representing the current game state
-    Returns:
-        - valid moves:   list | A list of nested tuples corresponding to valid moves [((start_row, start_col),(end_row, end_col)),((start_row, start_col),(end_row, end_col))]
-    """
-
-    
 
     def valid_moves(self, game_state):
         moves = []
@@ -176,155 +139,120 @@ class MiniChess:
                     break  # Stop if out of bounds
         return moves
 
-    """
-    Modify to board to make a move
+    def make_move(self, game_state, move, log_move=True, simulation=False):
+        
+        print(f"Making move: {move}")
 
-    Args: 
-        - game_state:   dictionary | Dictionary representing the current game state
-        - move          tuple | the move to perform ((start_row, start_col),(end_row, end_col))
-    Returns:
-        - game_state:   dictionary | Dictionary representing the modified game state
-    """
-
-    def make_move(self, game_state, move, log_move=True):
         global WhiteMoveCounter
         global BlackMoveCounter
         global NumOfMoves
 
-        start, end = move  # Define start and end here
+        start, end = move
+        start_row, start_col = start
+        end_row, end_col = end
+        piece = game_state["board"][start_row][start_col]
         captured_piece = self.captured_piece(game_state, end)
 
-        # ----------- Scenario 1: Moves a piece from one location to the other as well as when a piece is removed from the game(for general cases ONLY) -----------
+        # Check if the move is valid
+        if not self.is_valid_move(game_state, move):
+            print("Invalid move. Try again.")
+            return game_state
 
-        moveCodeLetter = 'A'                    # Initialized to random letter (used for the logger notation)
-        moveCodeNumber = '1'                    # Initialized to random number (used for the logger notation)
-        eliminated = False                      # Initialized to a piece not being eliminated
-        pawnToQueen = False                     # Initialized switch that checks if pawn has become queen
-
-        start_row, start_col = start            # the x position of the coordinate goes to start_row and the y position goes start_col
-        end_row, end_col = end                  # this step isn't needed but just for easier readability
-        
-        pieceEliminated = game_state["board"][0][4]                     # random spot (just to initialize)
-
-        piece = game_state["board"][start_row][start_col]               # copies the piece that is being moved
-        game_state["board"][start_row][start_col] = '.'                 # replaces that initial spot with a '.'
-
-        if game_state["board"][end_row][end_col] != '.':
-            pieceEliminated = game_state["board"][end_row][end_col]     # keeps track of the eliminated piece
-            eliminated = True                                           # turns on the switch (that piece has been eliminated in this turn)
-
-        game_state["board"][end_row][end_col] = piece                   # updates the piece at the end location
+        if piece == '.':
+            print("ERROR: Trying to move an empty square!")
+            return game_state  # Prevent breaking the board
 
 
-        if end_row == 0:
-            moveCodeNumber = '5'              # Initializing the code for the number to be used in the logger (since they dont have the same numbering and lettering)
-        elif end_row == 1:
-            moveCodeNumber = '4'
-        elif end_row == 2:
-            moveCodeNumber = '3'
-        elif end_row == 3:
-            moveCodeNumber = '2'
-        elif end_row == 4:
-            moveCodeNumber = '1'
-
-        if end_col == 0:
-            moveCodeLetter = 'A'              # Initializing the code for the letter to be used in the logger (since they dont have the same numbering and lettering)
-        elif end_col == 1:
-            moveCodeLetter = 'B'
-        elif end_col == 2:
-            moveCodeLetter = 'C'
-        elif end_col == 3:
-            moveCodeLetter = 'D'
-        elif end_col == 4:
-            moveCodeLetter = 'E'
-        
-
-        if game_state["turn"] == "white":                               # switches the turn of the player
-            game_state["turn"] = "black"
-        else:
-            game_state["turn"] = "white"
-        
-
-        # ----------- Scenario 2: If a white pawn moves to the last row, it becomes a white queen -----------
-
-        if game_state["board"][0][0] == 'wp':
-            game_state["board"][0][0] = 'wQ'                # becomes a queen (for white)
-            pawnToQueen = True
-
-        elif game_state["board"][0][1] == 'wp':
-            game_state["board"][0][1] = 'wQ'                # becomes a queen (for white)
-            pawnToQueen = True
-
-        elif game_state["board"][0][2] == 'wp':
-            game_state["board"][0][2] = 'wQ'                # becomes a queen (for white)
-            pawnToQueen = True
-
-        elif game_state["board"][0][3] == 'wp':
-            game_state["board"][0][3] = 'wQ'                # becomes a queen (for white)
-            pawnToQueen = True
-
-        elif game_state["board"][0][4] == 'wp':
-            game_state["board"][0][4] = 'wQ'                # becomes a queen (for white)
-            pawnToQueen = True
-
-        
-        # ----------- Scenario 3: If a black pawn moves to the last row, it becomes a black queen -----------
+        # Save the original position of the kings before moving
+        king_positions = {"wK": None, "bK": None}
+        for r in range(5):
+            for c in range(5):
+                if game_state["board"][r][c] in king_positions:
+                    king_positions[game_state["board"][r][c]] = (r, c)
 
 
-        if game_state["board"][4][0] == 'bp':
-            game_state["board"][4][0] = 'bQ'                # becomes a queen (for black)
-            pawnToQueen = True
+        # Move the piece
+        game_state["board"][start_row][start_col] = '.'
+        game_state["board"][end_row][end_col] = piece
 
-        elif game_state["board"][4][1] == 'bp':
-            game_state["board"][4][1] = 'bQ'                # becomes a queen (for black)
-            pawnToQueen = True
+        pawn_to_queen = self.handle_pawn_promotion(game_state)
 
-        elif game_state["board"][4][2] == 'bp':
-            game_state["board"][4][2] = 'bQ'                # becomes a queen (for black)
-            pawnToQueen = True
+        # Prevent simulation moves from affecting real game state
+        if not simulation:
+            # Check for game-ending conditions
+            piece_eliminated = self.check_game_end_conditions(game_state, piece, end_row, end_col)
 
-        elif game_state["board"][4][3] == 'bp':
-            game_state["board"][4][3] = 'bQ'                # becomes a queen (for black)
-            pawnToQueen = True
+            if log_move:
+                self.log_move(piece, end_row, end_col, captured_piece, pawn_to_queen, piece_eliminated)
 
-        elif game_state["board"][4][4] == 'bp':
-            game_state["board"][4][4] = 'bQ'                # becomes a queen (for black)
-            pawnToQueen = True
+            # Update move counters and check for draw
+            self.update_move_counters(captured_piece)
+            self.check_for_draw()
 
+        is_sim = simulation
+        # Ensure a king wasn't falsely removed
+        if not self.king_exists(game_state, is_sim):
+            print("ERROR: The King disappeared after the move! Undoing move.")
+            game_state["board"][start_row][start_col] = piece  # Undo move
+            game_state["board"][end_row][end_col] = '.'  # Restore board state
+            return game_state  # Return unchanged game state
 
-        # ----------- Scenario 4: If the white king is eliminated -----------
+        # Switch turns
+        game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
 
-        if pieceEliminated == 'wK':
-            with open("COMP472_Project.txt", "a") as f:
-                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and the white king has been eliminated ' + '\n' + 'GAME OVER: BLACK WINS \n')
-            print("Black wins!" + str(BlackMoveCounter) + " moves")
-            sys.exit(0)
+        return game_state
 
-        # ----------- Scenario 5: If the black king is eliminated -----------
+    def handle_pawn_promotion(self, game_state):
+        pawn_to_queen = False
+        for col in range(5):
+            if game_state["board"][0][col] == 'wp':
+                game_state["board"][0][col] = 'wQ'
+                pawn_to_queen = True
+            elif game_state["board"][4][col] == 'bp':
+                game_state["board"][4][col] = 'bQ'
+                pawn_to_queen = True
+        return pawn_to_queen
 
-        if pieceEliminated == 'bK':
-            with open("COMP472_Project.txt", "a") as f:
-                f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and the black king has been eliminated ' + '\n' + 'GAME OVER: WHITE WINS \n')
-            print("White wins!" + str(WhiteMoveCounter) + " moves")
-            sys.exit(0)
+    def check_game_end_conditions(self, game_state, piece, end_row, end_col):
+        white_king_exists = False
+        black_king_exists = False
 
+        # Check if the kings are still on the board
+        for row in game_state["board"]:
+            for piece in row:
+                if piece == 'wK':
+                    white_king_exists = True
+                elif piece == 'bK':
+                    black_king_exists = True
 
-        # ----------- Game / Move logger (Tracks the moves in the game) -----------
+        if not white_king_exists:
+            self.end_game("Black wins!", "BLACK WINS")
+        elif not black_king_exists:
+            self.end_game("White wins!", "WHITE WINS")
 
-        
-        if log_move:
-            if eliminated == True:
-                with open("COMP472_Project.txt", "a") as f:
-                    f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and ' + pieceEliminated + ' is now eliminated from the game \n')
-            elif pawnToQueen == False:
-                with open("COMP472_Project.txt", "a") as f:
-                    f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + '\n')
+        return game_state["board"][end_row][end_col]  # Return the piece that was eliminated (if any)    
+    
+    def end_game(self, message, log_message):
+        with open("COMP472_Project.txt", "a") as f:
+            f.write(f'GAME OVER: {log_message} \n')
+        print(message)
+        sys.exit(0)
+
+    def log_move(self, piece, end_row, end_col, captured_piece, pawn_to_queen, piece_eliminated):
+        move_code_letter = chr(ord('A') + end_col)
+        move_code_number = str(5 - end_row)
+        with open("COMP472_Project.txt", "a") as f:
+            if captured_piece != '.':
+                f.write(f'{piece} has moved to {move_code_letter}{move_code_number} and {piece_eliminated} is now eliminated from the game \n')
+            elif pawn_to_queen:
+                f.write(f'{piece} has moved to {move_code_letter}{move_code_number} and it has become a queen \n')
             else:
-                with open("COMP472_Project.txt", "a") as f:
-                    f.write(piece + ' has moved to ' + (moveCodeLetter + moveCodeNumber) + ' and it is now become a queen' + '\n')
+                f.write(f'{piece} has moved to {move_code_letter}{move_code_number} \n')
 
-        pawnToQueen = False                                 # reset the pawnToQueen to false so that it can be checked for in the future moves
-        eliminated = False                                  # reset the eliminated to false so that it can check for the future moves
+    def update_move_counters(self, captured_piece):
+        global WhiteMoveCounter
+        global BlackMoveCounter
+        global NumOfMoves
 
         if captured_piece != '.':
             self.move_counter = 0
@@ -333,67 +261,59 @@ class MiniChess:
 
         NumOfMoves = self.move_counter
 
+        if self.current_game_state["turn"] == "white":
+            WhiteMoveCounter += 1
+            with open("COMP472_Project.txt", "a") as f:
+                f.write(f"White Move Counter: {WhiteMoveCounter}\n")
+        else:
+            BlackMoveCounter += 1
+            with open("COMP472_Project.txt", "a") as f:
+                f.write(f"Black Move Counter: {BlackMoveCounter}\n")
+
+    def check_for_draw(self):
         if self.move_counter >= 10:
-            print("Game is a draw!")
-            exit(1)
-
-        # ----------- Scenario 6: Detect Draw -----------
-
-        if NumOfMoves >= 10:
             with open("COMP472_Project.txt", "a") as f:
                 f.write('GAME OVER: DRAW \n')
             print("No one won... It's a draw!")
             sys.exit(0)
 
-        # Increment move counters only during actual game moves
-        if game_state["turn"] == "white":
-            WhiteMoveCounter += 1
-            with open("COMP472_Project.txt", "a") as f:
-                f.write("White Move Counter: " + str(WhiteMoveCounter) + "\n")
-        else:
-            BlackMoveCounter += 1
-            with open("COMP472_Project.txt", "a") as f:
-                f.write("Black Move Counter: " + str(BlackMoveCounter) + "\n")
-
-        return game_state
-        
     def captured_piece(self, game_state, end):
         end_row, end_col = end
         piece = game_state["board"][end_row][end_col]
         return piece if piece != '.' else '.'
-    
+
     # Check if the king is on the board
-    def king_exists(self, game_state):
+    def king_exists(self, game_state, simulation=False):
+
+        white_king = False
+        black_king = False
+
         for row in game_state["board"]:
-            if "wK" in row or "bK" in row:
-                return True
-            return False
+            for piece in row:
+                if piece == "wK":
+                    white_king = True
+                elif piece == "bK":
+                    black_king = True
 
-    """
-    Parse the input string and modify it into board coordinates
+        if simulation:
+            return white_king and black_king  # Just return status, don't exit game
 
-    Args:
-        - move: string representing a move "B2 B3"
-    Returns:
-        - (start, end)  tuple | the move to perform ((start_row, start_col),(end_row, end_col))
-    """
+        if not white_king:
+            self.end_game("Black wins!", "BLACK WINS")
+        elif not black_king:
+            self.end_game("White wins!", "WHITE WINS")
+
+        return white_king and black_king
+
     def parse_input(self, move):
         try:
             start, end = move.split()
-            start = (5-int(start[1]), ord(start[0].upper()) - ord('A'))
-            end = (5-int(end[1]), ord(end[0].upper()) - ord('A'))
+            start = (5 - int(start[1]), ord(start[0].upper()) - ord('A'))
+            end = (5 - int(end[1]), ord(end[0].upper()) - ord('A'))
             return (start, end)
         except:
             return None
 
-    """
-    Game loop
-
-    Args:
-        - None
-    Returns:
-        - None
-    """
     def play(self):
         print("Welcome to Mini Chess!")
 
@@ -412,65 +332,196 @@ class MiniChess:
             print("Invalid mode. Exiting game.")
             exit(1)
 
+        if mode == '2' or mode == '3':
+            print("Which color should player 1 be? (w/b): ")
+            player1_color = input().strip().lower()
+
+            if player1_color == 'w':
+                print("Player 1 is white and starts first.")
+                self.current_game_state["turn"] = 'white'
+                self.ai_color = "black"  
+            elif player1_color == 'b':
+                print("Player 1 is black and starts second (after first AI).")
+                self.current_game_state["turn"] = 'white'
+                self.ai_color = "white"  
+            else:
+                print("Invalid color. Exiting game.")
+                exit(1)
+
+            print("Do you want minimax or alpha-beta pruning? (m/a): ")
+            algorithm = input().strip().lower()
+            if algorithm not in ['m', 'a']:
+                print("Invalid algorithm. Exiting game.")
+                exit(1)
+
+            print("Select timeout time for the AI: ")
+            global TIME_LIMIT
+            TIME_LIMIT = int(input().strip())
+
+            print("Select max number of turns (in total): ")
+            max_turns = int(input().strip())
+
+        print("Enter 'exit' to quit the game.")
+
         while True:
             self.display_board(self.current_game_state)
-            if mode == '1' or (mode == '2' and self.current_game_state['turn'] == 'white'):
-                move = input(f"{self.current_game_state['turn'].capitalize()} to move: ")
+
+            if self.current_game_state['turn'] == self.ai_color:  # AI's Turn
+                print("AI is thinking...")
+                start_time = time.time()
+                best_eval, move = self.use_minimax(self.current_game_state, alpha=-math.inf, beta=math.inf, maximizing_player=(self.ai_color == 'white'), start_time=start_time)
+
+                if move is None:
+                    print(f"AI ({self.ai_color}) has no valid moves. It loses!")
+                    exit(1)
+
+                print(f"AI ({self.ai_color}) move: {move}")
+
+                self.current_game_state = self.make_move(self.current_game_state, move, simulation=False)
+
+            else:  # Human Player's Turn
+                move = input(f"{self.current_game_state['turn'].capitalize()} to move: ").strip()
                 if move.lower() == 'exit':
                     print("Game exited.")
                     exit(1)
+
                 move = self.parse_input(move)
                 if not move or not self.is_valid_move(self.current_game_state, move):
                     print("Invalid move. Try again.")
                     continue
-            else:
-                start_time = time.time()
-                move = self.get_best_move(self.current_game_state, start_time)
-                if move is None:
-                    print(f"AI ({self.current_game_state['turn']}) ran out of time and loses!")
+
+                self.current_game_state = self.make_move(self.current_game_state, move, simulation=False)
+
+            if(mode == 2 or mode == 3):
+                global NumOfMoves
+                NumOfMoves += 1
+                if NumOfMoves >= max_turns:
+                    print("Max number of turns reached. Exiting game.")
                     exit(1)
-                print(f"AI ({self.current_game_state['turn']}) move: {move}")
+                                
+    def use_minimax(self, game_state, alpha, beta, maximizing_player, start_time):
+        print(f"Time1 Elapsed: {time.time() - start_time:.2f}s")
+        print(f"Board Evaluation1: {self.evaluate_board(game_state)}")
+        print(f"AI's available moves: {self.valid_moves(game_state)}")
 
-            self.make_move(self.current_game_state, move)
+        print(f"AI's color: {self.ai_color}")
+        print(f"AI is maximizing: {maximizing_player}")
+        print(f"Board Evaluation: {self.evaluate_board(game_state)}")
 
-    def get_best_move(self, game_state, start_time):
-        valid_moves = self.valid_moves(game_state)
+        
         best_move = None
-        best_score = -math.inf if game_state['turn'] == 'white' else math.inf
+        best_eval = -math.inf if maximizing_player else math.inf
+        depth = 1
 
-        for move in valid_moves:
-            if time.time() - start_time > TIME_LIMIT:
-                return None  # AI ran out of time
+        while depth <= 50:  # Limit depth to prevent infinite recursion
+            print(f"Minimax running at depth {depth}")
+            current_eval, current_move = self.minimax(game_state, depth, alpha, beta, maximizing_player, start_time)
+
+            if current_move is not None:
+                best_eval = current_eval
+                best_move = current_move
+
+            # Stop the search if the time limit is reached
+            if (time.time() - start_time) >= TIME_LIMIT:
+                break
+
+            depth += 1
+
+
+        print(f"Time2 Elapsed: {time.time() - start_time:.2f}s")
+        print(f"Board Evaluation2: {self.evaluate_board(game_state)}")
+        print(f"Best move found: {best_move}")
+
+        print(f"AI's color: {self.ai_color}")
+        print(f"AI is maximizing: {maximizing_player}")
+        print(f"Best move at depth {depth}: {best_move}")
+        print(f"Board Evaluation: {self.evaluate_board(game_state)}")
+        
+        return best_eval, best_move
+
+    def minimax(self, game_state, depth, alpha, beta, maximizing_player, start_time):
+
+        print(f"Minimax Depth: {depth}, Maximizing: {maximizing_player}")
+        print(f"Board Evaluation1: {self.evaluate_board(game_state)}")           
+        print(f"Time1 Elapsed: {time.time() - start_time:.2f}s")
+        print(f"Minimax Depth: {depth}, Maximizing: {maximizing_player}")
+
+        if depth == 0 or not self.king_exists(game_state, simulation=True) or (time.time() - start_time) >= TIME_LIMIT:
+            return self.evaluate_board(game_state), None
+
+        # Initialize the best move and evaluation variables
+        best_move = None
+        best_eval = -math.inf if maximizing_player else math.inf
+
+        moves = self.valid_moves(game_state)
+        print(f"Valid moves at depth {depth}: {moves}")
+
+        
+        # testing and trying to sort based on eval
+        def move_evaluation(move):
+            test_game_state = copy.deepcopy(game_state)
+            test_game_state = self.make_move(test_game_state, move, log_move=False, simulation=True)
+            return self.evaluate_board(test_game_state)
+
+        moves.sort(key=move_evaluation, reverse=maximizing_player)  #Sort in best order
+
+        for move in moves:
+            if (time.time() - start_time) >= TIME_LIMIT - 0.2:
+                break
+
+            # Create a new game state by making the move
             new_game_state = copy.deepcopy(game_state)
-            self.make_move(new_game_state, move, log_move=False)
-            score = self.evaluate_board(new_game_state)
-            if game_state['turn'] == 'white' and score > best_score:
-                best_score = score
-                best_move = move
-            elif game_state['turn'] == 'black' and score < best_score:
-                best_score = score
-                best_move = move
 
-        return best_move
+            print(f"NEW BOARD Before move: ")
+            self.display_board(new_game_state)
+
+            new_game_state = self.make_move(new_game_state, move, log_move=False, simulation=True)
+
+            print(f"NEW BOARD After move: ")
+            self.display_board(new_game_state)
+
+            # Recursively call minimax with the new game state and updated parameters
+            eval, _ = self.minimax(new_game_state, depth - 1, alpha, beta, not maximizing_player, start_time)
+
+            # Update the best move and evaluation based on the maximizing or minimizing player
+            if maximizing_player:
+                if eval > best_eval:
+                    best_eval = eval
+                    best_move = move
+                alpha = max(alpha, eval)
+            else:
+                if eval < best_eval:
+                    best_eval = eval
+                    best_move = move
+                beta = min(beta, eval)
+
+        print(f"Board Evaluation2: {self.evaluate_board(game_state)}")
+        print(f"Time2 Elapsed: {time.time() - start_time:.2f}s")
+
+        print(f"Best move at depth {depth}: {best_move}, Score: {best_eval}")
+        return best_eval, best_move
+    
 
     def evaluate_board(self, game_state):
-        piece_values = {
+        e0 = {
             'wp': 1, 'wB': 3, 'wN': 3, 'wQ': 9, 'wK': 999,
             'bp': 1, 'bB': 3, 'bN': 3, 'bQ': 9, 'bK': 999
         }
-        
+
         white_score = 0
         black_score = 0
-        
+
         for row in game_state["board"]:
             for piece in row:
-                if piece in piece_values:
+                if piece in e0:
                     if piece[0] == 'w':
-                        white_score += piece_values[piece]
+                        white_score += e0[piece]
                     else:
-                        black_score += piece_values[piece]
-        
-        return white_score - black_score
+                        black_score += e0[piece]
+
+        board_eval = white_score - black_score
+        return board_eval if self.ai_color == "white" else -board_eval
+
 
 if __name__ == "__main__":
     game = MiniChess()
