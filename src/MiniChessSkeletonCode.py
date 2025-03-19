@@ -11,6 +11,7 @@ TIME_LIMIT = 5  # Time limit in seconds for the AI to make a move
 player1_color = None
 algorithm = None
 max_turns = 0
+mode = None
 
 class MiniChess:
     def __init__(self):
@@ -19,6 +20,7 @@ class MiniChess:
 
         self.move_counter = 0
         self.ai_color = None
+        self.ai_colorH = None
 
         # Simple cache to remember positions
         self.transposition_table = {}
@@ -312,6 +314,7 @@ class MiniChess:
               "\n1. Player vs Player"
               "\n2. Player vs AI"
               "\n3. AI vs AI")
+        global mode
         mode = input("Enter the mode number: ")
         if mode == '1':
             print("Player vs Player mode selected.")
@@ -331,10 +334,12 @@ class MiniChess:
                 print("Player 1 is white and starts first.")
                 self.current_game_state["turn"] = 'white'
                 self.ai_color = "black"  
+                self.ai_colorH = "white"
             elif player1_color == 'b':
                 print("Player 1 is black and starts second (after first AI).")
                 self.current_game_state["turn"] = 'white'
-                self.ai_color = "white"  
+                self.ai_color = "white"
+                self.ai_colorH = "black"  
             else:
                 print("Invalid color. Exiting game.")
                 exit(1)
@@ -359,7 +364,7 @@ class MiniChess:
         while True:
             self.display_board(self.current_game_state)
 
-            if self.current_game_state['turn'] == self.ai_color:  # AI's Turn
+            if self.current_game_state['turn'] == self.ai_color or (self.ai_colorH == self.current_game_state['turn'] and mode == 3):  # AI's Turn
                 print("AI is thinking...")
                 start_time = time.time()
                 best_eval, move = self.use_minimax(self.current_game_state, alpha=-math.inf, beta=math.inf, maximizing_player=(self.ai_color == 'white'), start_time=start_time)
@@ -452,62 +457,79 @@ class MiniChess:
     def minimax(self, game_state, depth, alpha, beta, maximizing_player, start_time):
         """
         Recursively evaluates moves up to a certain depth:
-          - Checks if king still exists or depth/time limit reached.
-          - Uses transposition table to avoid re-evaluating the same board/state.
-          - Sorts moves to prune (alpha-beta pruning) and find best move.
-          - Extra: Prioritizes moves that keep the current player's king safe.
+          1) Checks if king is in danger.
+          2) If not, checks if we can capture opponent's king immediately.
+          3) Otherwise proceeds with normal move logic.
+          Uses transposition table and alpha-beta pruning to optimize.
         """
+
         # Early-exit conditions
         if depth == 0 or not self.king_exists(game_state, simulation=True) or (time.time() - start_time) >= TIME_LIMIT:
             return self.evaluate_board(game_state), None
 
-        # Identify current color of king
         king_color = 'w' if game_state['turn'] == "white" else 'b'
+        opponent_color = 'b' if king_color == 'w' else 'w'
 
-        # Use a transposition table (cache) if available
         trans_key = (tuple(tuple(row) for row in game_state["board"]), game_state['turn'], depth, maximizing_player)
         if trans_key in self.transposition_table:
             return self.transposition_table[trans_key]
 
-        # Get valid moves, then separate them by "king-safe" vs. "risky"
         all_moves = self.valid_moves(game_state)
-        safe_moves = []
-        risky_moves = []
 
-        # Simple pass to mark which moves are safe for the king
+        # Step 1: If king is in danger, create a list of moves that remove the danger
+        king_danger = self.is_king_in_danger(game_state, king_color)
+        danger_safe_moves = []
         for move in all_moves:
             temp_state = copy.deepcopy(game_state)
             temp_state = self.make_move(temp_state, move, log_move=False, simulation=True)
-            # If king is not in danger after making this move, consider it safe
             if not self.is_king_in_danger(temp_state, king_color):
-                safe_moves.append(move)
-            else:
-                risky_moves.append(move)
+                danger_safe_moves.append(move)
 
-        # Always try the safe moves first
-        if safe_moves:
-            moves = safe_moves + risky_moves
+        # Step 2: If king not in danger, find moves that capture opponent's king immediately
+        king_capture_moves = []
+        if not king_danger:
+            for move in all_moves:
+                temp_state = copy.deepcopy(game_state)
+                temp_state = self.make_move(temp_state, move, log_move=False, simulation=True)
+                # If after this move, the opponent's king doesn't exist, it's a king-capturing move
+                if not self.king_exists(temp_state, simulation=True) and not self.is_king_in_danger(temp_state, king_color):
+                    king_capture_moves.append(move)
+
+        # Step 3: Prioritize moves based on the above checks
+        if king_danger and danger_safe_moves:
+            # If king is in danger, use only the moves that keep the king safe
+            moves = danger_safe_moves
+        elif king_capture_moves:
+            # If we can capture opponent's king immediately, do that
+            moves = king_capture_moves
         else:
-            moves = all_moves  # If no safe moves, proceed normally
+            # Otherwise, fallback to your existing "safe vs. risky" logic
+            safe_moves = []
+            risky_moves = []
+            for move in all_moves:
+                temp_state = copy.deepcopy(game_state)
+                temp_state = self.make_move(temp_state, move, log_move=False, simulation=True)
+                if not self.is_king_in_danger(temp_state, king_color):
+                    safe_moves.append(move)
+                else:
+                    risky_moves.append(move)
+            moves = safe_moves + risky_moves if safe_moves else all_moves
 
         move_evaluations = []
         for move in moves:
-            # Time check
             if (time.time() - start_time) >= TIME_LIMIT - 0.12:
                 break
             new_game_state = copy.deepcopy(game_state)
             new_game_state = self.make_move(new_game_state, move, log_move=False, simulation=True)
-
             eval_score, _ = self.minimax(new_game_state, depth - 1, alpha, beta, not maximizing_player, start_time)
             move_evaluations.append((move, eval_score))
 
+            # Alpha-beta part
             if algorithm == 'a':
-                # Alpha-beta pruning
                 if maximizing_player:
                     alpha = max(alpha, eval_score)
                 else:
                     beta = min(beta, eval_score)
-
                 if beta <= alpha:
                     break
 
@@ -530,24 +552,25 @@ class MiniChess:
         else:
             if game_state['turn'] == "black":
                 move_evaluations.sort(key=lambda x: x[1], reverse=False) # false
+                print(f"FALSE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
+                for mv, eval_score in move_evaluations:
+                    print(f"Eval: {mv} - Move: {eval_score}")
+
             else:
                 move_evaluations.sort(key=lambda x: x[1], reverse=True) # true
+                print(f"TRUE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
+                for mv, eval_score in move_evaluations:
+                    print(f"Move: {mv} - Eval: {eval_score}")
 
 
-        #print(f"Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
-        #for mv, eval_score in move_evaluations:
-        #    print(f"Move: {mv} - Eval: {eval_score}")
 
         if move_evaluations:
-        #    print(f"Making move: {move_evaluations[0][0]}")
             best_eval = move_evaluations[0][1]
             best_move = move_evaluations[0][0]
         else:
-            # No moves found; game is effectively lost for current player
             best_eval = -math.inf if maximizing_player else math.inf
             best_move = None
 
-        # Cache
         self.transposition_table[trans_key] = (best_eval, best_move)
         return best_eval, best_move
 

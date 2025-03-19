@@ -1,0 +1,134 @@
+wQ has moved to D2 
+White Move Counter: 1
+bQ has moved to B4 
+Black Move Counter: 1
+wQ has moved to B4 and wQ is now eliminated from the game 
+White Move Counter: 2
+bB has moved to B4 and bB is now eliminated from the game 
+Black Move Counter: 2
+wN has moved to A3 
+White Move Counter: 3
+GAME OVER: BLACK WINS 
+wQ has moved to D2 
+White Move Counter: 1
+bQ has moved to B4 
+Black Move Counter: 1
+wQ has moved to B4 and wQ is now eliminated from the game 
+White Move Counter: 2
+bB has moved to B4 and bB is now eliminated from the game 
+Black Move Counter: 2
+wK has moved to D1 
+White Move Counter: 3
+bK has moved to B5 
+Black Move Counter: 3
+wp has moved to C3 
+White Move Counter: 4
+bN has moved to C3 and bN is now eliminated from the game 
+Black Move Counter: 4
+wB has moved to D2 
+White Move Counter: 5
+GAME OVER: BLACK WINS 
+wp has moved to C3 
+White Move Counter: 1
+bp has moved to C3 and bp is now eliminated from the game 
+Black Move Counter: 1
+wQ has moved to D5 and wQ is now eliminated from the game 
+White Move Counter: 2
+bp has moved to B2 and bp is now eliminated from the game 
+Black Move Counter: 2
+wB has moved to D2 
+White Move Counter: 3
+bK has moved to A4 
+Black Move Counter: 3
+wN has moved to C3 
+White Move Counter: 4
+bK has moved to B4 
+Black Move Counter: 4
+wN has moved to B5 and wN is now eliminated from the game 
+White Move Counter: 5
+bK has moved to B5 and bK is now eliminated from the game 
+Black Move Counter: 5
+wQ has moved to E4 
+White Move Counter: 6
+bp has moved to B1 and it has become a queen 
+Black Move Counter: 6
+wQ has moved to B1 and wQ is now eliminated from the game 
+White Move Counter: 7
+wp has moved to C3 
+White Move Counter: 1
+bp has moved to C3 and bp is now eliminated from the game 
+Black Move Counter: 1
+wQ has moved to D5 and wQ is now eliminated from the game 
+White Move Counter: 2
+bp has moved to B2 and bp is now eliminated from the game 
+Black Move Counter: 2
+wB has moved to D2 
+White Move Counter: 3
+bK has moved to A4 
+Black Move Counter: 3
+wN has moved to C3 
+White Move Counter: 4
+bp has moved to B1 and it has become a queen 
+Black Move Counter: 4
+GAME OVER: WHITE WINS 
+wp has moved to C3 
+White Move Counter: 1
+bp has moved to C3 and bp is now eliminated from the game 
+Black Move Counter: 1
+wQ has moved to D5 and wQ is now eliminated from the game 
+White Move Counter: 2
+bp has moved to B2 and bp is now eliminated from the game 
+Black Move Counter: 2
+wB has moved to D2 
+White Move Counter: 3
+bK has moved to A4 
+Black Move Counter: 3
+wN has moved to C3 
+White Move Counter: 4
+bK has moved to B4 
+Black Move Counter: 4
+wN has moved to B5 and wN is now eliminated from the game 
+White Move Counter: 5
+bp has moved to B1 and it has become a queen 
+Black Move Counter: 5
+GAME OVER: WHITE WINS 
+wp has moved to C3 
+White Move Counter: 1
+bp has moved to C3 and bp is now eliminated from the game 
+Black Move Counter: 1
+wQ has moved to D5 and wQ is now eliminated from the game 
+White Move Counter: 2
+bp has moved to B2 and bp is now eliminated from the game 
+Black Move Counter: 2
+wB has moved to D2 
+White Move Counter: 3
+bK has moved to A4 
+Black Move Counter: 3
+wN has moved to C3 
+White Move Counter: 4
+bK has moved to B4 
+Black Move Counter: 4
+wN has moved to B5 and wN is now eliminated from the game 
+White Move Counter: 5
+bK has moved to B5 and bK is now eliminated from the game 
+Black Move Counter: 5
+wQ has moved to E4 
+White Move Counter: 6
+bp has moved to B1 and it has become a queen 
+Black Move Counter: 6
+wQ has moved to B1 and wQ is now eliminated from the game 
+White Move Counter: 7
+bK has moved to A4 
+Black Move Counter: 7
+wQ has moved to A2 
+White Move Counter: 8
+bK has moved to B5 
+Black Move Counter: 8
+wQ has moved to A5 
+White Move Counter: 9
+bK has moved to A5 and bK is now eliminated from the game 
+Black Move Counter: 9
+GAME OVER: WHITE WINS 
+wQ has moved to D2 
+White Move Counter: 1
+GAME OVER: DRAW 
