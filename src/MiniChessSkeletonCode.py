@@ -188,8 +188,6 @@ class MiniChess:
             self.update_move_counters(captured_piece)
             self.check_for_draw()
 
-    
-
         # Switch turns
         game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
 
@@ -362,11 +360,36 @@ class MiniChess:
         print("Enter 'exit' to quit the game.")
 
         while True:
+            # Display the current state of the board each time before a move
             self.display_board(self.current_game_state)
 
-            if self.current_game_state['turn'] == self.ai_color or (self.ai_colorH == self.current_game_state['turn'] and mode == 3):  # AI's Turn
+            if mode == '3':
+                # In 'AI vs AI' mode, both sides are controlled by the AI
+                print(f"AI ({self.current_game_state['turn']}) is thinking...")
+                start_time = time.time()
+
+                # Determine if AI should play as the "maximizing" side
+                # Typically, white is considered the maximizing player
+                ai_is_white = (self.current_game_state['turn'] == 'white')
+                
+                # Use the minimax (or alpha-beta) approach to find the best move
+                best_eval, move = self.use_minimax(self.current_game_state, alpha=-math.inf, beta=math.inf, maximizing_player=ai_is_white, start_time=start_time)
+
+                # If the AI has no valid moves, it loses
+                if move is None:
+                    print(f"AI ({self.current_game_state['turn']}) has no valid moves. It loses!")
+                    exit(1)
+
+                print(f"AI ({self.current_game_state['turn']}) move: {move}")
+                # Apply the chosen move to the current game state
+                self.current_game_state = self.make_move(self.current_game_state, move, simulation=False)
+
+            elif self.current_game_state['turn'] == self.ai_color:
+                # If we are in 'Player vs AI' mode and it's AI's turn
                 print("AI is thinking...")
                 start_time = time.time()
+
+                # Determine if the AI is maximizing (if it is playing as white)
                 best_eval, move = self.use_minimax(self.current_game_state, alpha=-math.inf, beta=math.inf, maximizing_player=(self.ai_color == 'white'), start_time=start_time)
 
                 if move is None:
@@ -374,79 +397,94 @@ class MiniChess:
                     exit(1)
 
                 print(f"AI ({self.ai_color}) move: {move}")
-
+                # Apply the AI's chosen move
                 self.current_game_state = self.make_move(self.current_game_state, move, simulation=False)
 
-            else:  # Human Player's Turn
+            else:
+                # If it's not AI vs AI and not AI's turn, then it's a human player's turn
                 move = input(f"{self.current_game_state['turn'].capitalize()} to move: ").strip()
                 if move.lower() == 'exit':
+                    # Allow the player to exit the game
                     print("Game exited.")
                     exit(1)
 
+                # Convert the player's textual input (e.g., "a2 b3") into board coordinates
                 move = self.parse_input(move)
+
+                # Validate the move before applying it
                 if not move or not self.is_valid_move(self.current_game_state, move):
                     print("Invalid move. Try again.")
                     continue
 
+                # If the move is valid, apply it to the game state
                 self.current_game_state = self.make_move(self.current_game_state, move, simulation=False)
 
-            if(mode == 2 or mode == 3):
+            # For modes involving an AI (either 'Player vs AI' or 'AI vs AI'), track the number of moves
+            if mode == '2' or mode == '3':
                 global NumOfMoves
                 NumOfMoves += 1
+                # If the number of moves has reached the maximum limit, end the game
                 if NumOfMoves >= max_turns:
                     print("Max number of turns reached. Exiting game.")
                     exit(1)
-                                
+
     def use_minimax(self, game_state, alpha, beta, maximizing_player, start_time):
-        
+        """
+        Initiates a minimax (or alpha-beta if chosen) search to find the best move 
+        for the current player. We iteratively deepen up to depth 50 or until the time limit expires.
+        """
         best_move = None
+        # Assume the best evaluation starts at negative infinity for maximizing, or positive infinity for minimizing
         best_eval = -math.inf if maximizing_player else math.inf
         depth = 1
 
-        while depth <= 3:  # Limit depth to prevent infinite recursion
+        # We'll increment depth by 1 until we reach 50, but we often break sooner if the time limit is reached
+        while depth <= 50:
             print(f"Minimax running at depth {depth}")
             current_eval, current_move = self.minimax(game_state, depth, alpha, beta, maximizing_player, start_time)
 
+            # If we found a move at this depth, update the best found so far
             if current_move is not None:
                 best_eval = current_eval
                 best_move = current_move
 
-            # Stop the search if the time limit is reached
+            # If our allotted time limit is exceeded, we stop searching deeper
             if (time.time() - start_time) >= TIME_LIMIT:
                 break
 
             depth += 1
 
-        
         return best_eval, best_move
+
 
     def is_king_in_danger(self, game_state, king_color):
         """
-        Returns True if the king of the specified color can be captured
-        on the very next opponent move, False otherwise.
+        Determines if a king of the given color can be captured by the opponent 
+        in their very next move. This is used to give priority to moves that save the king.
         """
-        # 1. Find king position
         king_positions = []
+        # Look for the positions of the king whose color is king_color
         for r in range(5):
             for c in range(5):
                 piece = game_state["board"][r][c]
                 if piece != '.' and piece[0] == king_color and piece[1] == 'K':
                     king_positions.append((r, c))
 
+        # If we can't find such a king, we assume it's 'in danger' by default, 
+        # because there's effectively no king left
         if not king_positions:
-            return True  # There's no king, so it's "in danger" by definition
+            return True
 
-        # 2. Temporarily switch turn to the opponent
+        # Temporarily switch the turn to the opponent to find their valid moves
         original_turn = game_state["turn"]
         game_state["turn"] = "white" if original_turn == "black" else "black"
 
-        # 3. Get all moves for the opponent
         opponent_moves = self.valid_moves(game_state)
 
-        # 4. Restore the turn
+        # Restore the original turn
         game_state["turn"] = original_turn
 
-        # 5. If any opponent move captures king’s position, it's in danger
+        # If any of the opponent's moves could end on the king's position, the king is in danger
         king_set = set(king_positions)
         for om in opponent_moves:
             _, end_pos = om
@@ -454,124 +492,156 @@ class MiniChess:
                 return True
         return False
 
+
     def minimax(self, game_state, depth, alpha, beta, maximizing_player, start_time):
         """
-        Recursively evaluates moves up to a certain depth:
-          1) Checks if king is in danger.
-          2) If not, checks if we can capture opponent's king immediately.
-          3) Otherwise proceeds with normal move logic.
-          Uses transposition table and alpha-beta pruning to optimize.
+        Core minimax (or alpha-beta) search:
+          1) We terminate (return an evaluation score) if we reach depth 0, 
+             the king no longer exists, or time is up.
+          2) We generate all valid moves.
+          3) We check conditions:
+             - if our king is in danger, we first look for moves to save it.
+             - if it is not in danger, see if we can capture the opponent's king.
+             - otherwise, classify moves as safe or risky (where the king ends up in danger).
+          4) We evaluate and sort these moves. Because of the transposition table,
+             repeated states aren't re-evaluated.
+          5) Use alpha-beta pruning if selected.
         """
 
-        # Early-exit conditions
+        # 1) Early-stop if we've reached the limit in depth, the king is gone, or we've hit our time limit
         if depth == 0 or not self.king_exists(game_state, simulation=True) or (time.time() - start_time) >= TIME_LIMIT:
             return self.evaluate_board(game_state), None
 
+        # Determine the current king's color and the opponent's color
         king_color = 'w' if game_state['turn'] == "white" else 'b'
         opponent_color = 'b' if king_color == 'w' else 'w'
 
+        # Create a transposition key (essentially a snapshot of the board + whose turn + depth + if maximizing)
         trans_key = (tuple(tuple(row) for row in game_state["board"]), game_state['turn'], depth, maximizing_player)
+
+        # If we've seen this exact scenario before, retrieve its stored result
         if trans_key in self.transposition_table:
             return self.transposition_table[trans_key]
 
+        # Generate all possible valid moves for the current player
         all_moves = self.valid_moves(game_state)
 
-        # Step 1: If king is in danger, create a list of moves that remove the danger
+        # 2) If the king is in danger, we want to filter moves that fix this problem
         king_danger = self.is_king_in_danger(game_state, king_color)
         danger_safe_moves = []
         for move in all_moves:
+            # Simulate the move
             temp_state = copy.deepcopy(game_state)
             temp_state = self.make_move(temp_state, move, log_move=False, simulation=True)
+
+            # If the king is no longer in danger after this move, keep it as a 'safe' move
             if not self.is_king_in_danger(temp_state, king_color):
                 danger_safe_moves.append(move)
 
-        # Step 2: If king not in danger, find moves that capture opponent's king immediately
+        # 3) If the king is not in danger, see if we can capture the opponent's king right away
         king_capture_moves = []
         if not king_danger:
             for move in all_moves:
                 temp_state = copy.deepcopy(game_state)
                 temp_state = self.make_move(temp_state, move, log_move=False, simulation=True)
-                # If after this move, the opponent's king doesn't exist, it's a king-capturing move
+
+                # If the opponent's king doesn't exist after our move, it's a king-capturing move
                 if not self.king_exists(temp_state, simulation=True) and not self.is_king_in_danger(temp_state, king_color):
                     king_capture_moves.append(move)
 
-        # Step 3: Prioritize moves based on the above checks
+        # Choose which set of moves to evaluate based on the above logic
         if king_danger and danger_safe_moves:
-            # If king is in danger, use only the moves that keep the king safe
-            moves = danger_safe_moves
+            moves = danger_safe_moves  # Only moves that keep the king safe
         elif king_capture_moves:
-            # If we can capture opponent's king immediately, do that
-            moves = king_capture_moves
+            moves = king_capture_moves  # Moves that let us capture the opponent's king
         else:
-            # Otherwise, fallback to your existing "safe vs. risky" logic
+            # If none of the above situations apply, we categorize moves as 'safe' or 'risky'
             safe_moves = []
             risky_moves = []
             for move in all_moves:
                 temp_state = copy.deepcopy(game_state)
                 temp_state = self.make_move(temp_state, move, log_move=False, simulation=True)
+                # If we're still safe after this move, put it in safe_moves, else in risky
                 if not self.is_king_in_danger(temp_state, king_color):
                     safe_moves.append(move)
                 else:
                     risky_moves.append(move)
+
+            # If there are safe moves, we do them first, otherwise do the entire move list
             moves = safe_moves + risky_moves if safe_moves else all_moves
 
         move_evaluations = []
+
+        # Evaluate each move in the chosen set
         for move in moves:
+            # If our time is about to run out, break early to avoid going over time
             if (time.time() - start_time) >= TIME_LIMIT - 0.12:
                 break
+
+            # Simulate the move
             new_game_state = copy.deepcopy(game_state)
             new_game_state = self.make_move(new_game_state, move, log_move=False, simulation=True)
+
+            # Recursively call minimax (with one less depth) and toggling maximizing_player
             eval_score, _ = self.minimax(new_game_state, depth - 1, alpha, beta, not maximizing_player, start_time)
             move_evaluations.append((move, eval_score))
 
-            # Alpha-beta part
+            # 4) Alpha-beta pruning logic if algorithm == 'a'
             if algorithm == 'a':
                 if maximizing_player:
                     alpha = max(alpha, eval_score)
                 else:
                     beta = min(beta, eval_score)
-                if beta <= alpha:
+                if beta <= alpha:  # If the window is closed, no need to explore further
                     break
 
-        # Sort the results to choose best for current player
+        # 5) Sort the evaluated moves to pick the best according to the current player's color and role
         if (player1_color == 'w'):
+            # If the player 1 color is white:
             if game_state['turn'] == "white":
-                move_evaluations.sort(key=lambda x: x[1], reverse=True) # true
+                # This means white is playing, so we sort in descending order to get the highest eval first
+                move_evaluations.sort(key=lambda x: x[1], reverse=True)                
+                # print(f"TRUE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
+                # for mv, eval_score in move_evaluations:
+                #     print(f"Move: {mv} - Eval: {eval_score}")
 
-                print(f"TRUE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
-                for mv, eval_score in move_evaluations:
-                    print(f"Move: {mv} - Eval: {eval_score}")
-                    
             else:
-                move_evaluations.sort(key=lambda x: x[1], reverse=True) # false
-                
-                print(f"FALSE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
-                for mv, eval_score in move_evaluations:
-                    print(f"Eval: {mv} - Move: {eval_score}")
+                # If black is playing (and player1 is still white), we also sort in descending order 
+                # but the logic might lean differently based on your approach
+                move_evaluations.sort(key=lambda x: x[1], reverse=True)
+                # print(f"notFALSE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
+                # for mv, eval_score in move_evaluations:
+                #     print(f"Move: {mv} - Eval: {eval_score}")
 
         else:
+            # If the player 1 color is black:
             if game_state['turn'] == "black":
-                move_evaluations.sort(key=lambda x: x[1], reverse=False) # false
-                print(f"FALSE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
-                for mv, eval_score in move_evaluations:
-                    print(f"Eval: {mv} - Move: {eval_score}")
+                # Sort in ascending order for black if we consider black as the minimizing side
+                move_evaluations.sort(key=lambda x: x[1], reverse=False)
+                # print(f"FALSE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
+                # for mv, eval_score in move_evaluations:
+                #     print(f"Move: {mv} - Eval: {eval_score}")
 
             else:
-                move_evaluations.sort(key=lambda x: x[1], reverse=True) # true
-                print(f"TRUE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
-                for mv, eval_score in move_evaluations:
-                    print(f"Move: {mv} - Eval: {eval_score}")
+                # Otherwise sort in descending for white
+                move_evaluations.sort(key=lambda x: x[1], reverse=True)
+                # print(f"TRUE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
+                # for mv, eval_score in move_evaluations:
+                #     print(f"Move: {mv} - Eval: {eval_score}")
 
 
-
+        # After sorting, the first element in move_evaluations is the best move for the current side
         if move_evaluations:
             best_eval = move_evaluations[0][1]
             best_move = move_evaluations[0][0]
         else:
+            # If we have no moves, set best_eval accordingly and best_move to None
             best_eval = -math.inf if maximizing_player else math.inf
             best_move = None
 
+        # Store the result in the transposition table to avoid recalculating
         self.transposition_table[trans_key] = (best_eval, best_move)
+
         return best_eval, best_move
 
     def evaluate_board(self, game_state):
