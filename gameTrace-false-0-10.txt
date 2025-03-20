@@ -1,0 +1,210 @@
+Game Parameters:
+ - Timeout (t): 0
+ - Max Turns (m): 10
+ - Player 1 color: WHITE
+ - Player 1 = Human & Player 2 = Human
+ - Alpha-Beta: False
+
+Initial Board Configuration:
+bK bQ bB bN .
+. . bp bp .
+. . . . .
+. wp wp . .
+. wN wB wQ wK
+
+====================================
+Player: White
+Turn #1
+Action: Moved wQ from D1 to D2
+Heuristic score of resulting board: 0
+New Board Configuration:
+bK bQ bB bN .
+. . bp bp .
+. . . . .
+. wp wp wQ .
+. wN wB . wK
+
+====================================
+Player: Black
+Turn #1
+Action: Moved bK from A5 to A4
+Heuristic score of resulting board: 0
+New Board Configuration:
+. bQ bB bN .
+bK . bp bp .
+. . . . .
+. wp wp wQ .
+. wN wB . wK
+
+====================================
+Player: White
+Turn #2
+Action: Moved wQ from D2 to D1
+Heuristic score of resulting board: 0
+New Board Configuration:
+. bQ bB bN .
+bK . bp bp .
+. . . . .
+. wp wp . .
+. wN wB wQ wK
+
+====================================
+Player: Black
+Turn #2
+Action: Moved bK from A4 to A5
+Heuristic score of resulting board: 0
+New Board Configuration:
+bK bQ bB bN .
+. . bp bp .
+. . . . .
+. wp wp . .
+. wN wB wQ wK
+
+====================================
+Player: White
+Turn #3
+Action: Moved wQ from D1 to D4
+Captured piece: bp
+Heuristic score of resulting board: 1
+New Board Configuration:
+bK bQ bB bN .
+. . bp wQ .
+. . . . .
+. wp wp . .
+. wN wB . wK
+
+====================================
+Player: Black
+Turn #3
+Action: Moved bK from A5 to A4
+Heuristic score of resulting board: 1
+New Board Configuration:
+. bQ bB bN .
+bK . bp wQ .
+. . . . .
+. wp wp . .
+. wN wB . wK
+
+====================================
+Player: White
+Turn #4
+Action: Moved wQ from D4 to D2
+Heuristic score of resulting board: 1
+New Board Configuration:
+. bQ bB bN .
+bK . bp . .
+. . . . .
+. wp wp wQ .
+. wN wB . wK
+
+====================================
+Player: Black
+Turn #4
+Action: Moved bK from A4 to A5
+Heuristic score of resulting board: 1
+New Board Configuration:
+bK bQ bB bN .
+. . bp . .
+. . . . .
+. wp wp wQ .
+. wN wB . wK
+
+====================================
+Player: White
+Turn #5
+Action: Moved wQ from D2 to D3
+Heuristic score of resulting board: 1
+New Board Configuration:
+bK bQ bB bN .
+. . bp . .
+. . . wQ .
+. wp wp . .
+. wN wB . wK
+
+====================================
+Player: Black
+Turn #5
+Action: Moved bK from A5 to A4
+Heuristic score of resulting board: 1
+New Board Configuration:
+. bQ bB bN .
+bK . bp . .
+. . . wQ .
+. wp wp . .
+. wN wB . wK
+
+====================================
+Player: White
+Turn #6
+Action: Moved wQ from D3 to D2
+Heuristic score of resulting board: 1
+New Board Configuration:
+. bQ bB bN .
+bK . bp . .
+. . . . .
+. wp wp wQ .
+. wN wB . wK
+
+====================================
+Player: Black
+Turn #6
+Action: Moved bK from A4 to A5
+Heuristic score of resulting board: 1
+New Board Configuration:
+bK bQ bB bN .
+. . bp . .
+. . . . .
+. wp wp wQ .
+. wN wB . wK
+
+====================================
+Player: White
+Turn #7
+Action: Moved wQ from D2 to D3
+Heuristic score of resulting board: 1
+New Board Configuration:
+bK bQ bB bN .
+. . bp . .
+. . . wQ .
+. wp wp . .
+. wN wB . wK
+
+====================================
+Player: Black
+Turn #7
+Action: Moved bK from A5 to A4
+Heuristic score of resulting board: 1
+New Board Configuration:
+. bQ bB bN .
+bK . bp . .
+. . . wQ .
+. wp wp . .
+. wN wB . wK
+
+====================================
+Player: White
+Turn #8
+Action: Moved wQ from D3 to D2
+Heuristic score of resulting board: 1
+New Board Configuration:
+. bQ bB bN .
+bK . bp . .
+. . . . .
+. wp wp wQ .
+. wN wB . wK
+
+====================================
+Player: Black
+Turn #8
+Action: Moved bK from A4 to A5
+Heuristic score of resulting board: 1
+New Board Configuration:
+bK bQ bB bN .
+. . bp . .
+. . . . .
+. wp wp wQ .
+. wN wB . wK
+
+=== GAME OVER ===
+Result: DRAW
+Draw occurred after Black's turn at turn #8

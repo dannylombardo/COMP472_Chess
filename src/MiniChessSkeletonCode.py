@@ -24,6 +24,7 @@ class MiniChess:
         self.ai_color = None
         self.ai_colorH = None
         self.trace_file_name = None
+
         # Simple cache to remember positions
         self.transposition_table = {}
 
@@ -32,6 +33,7 @@ class MiniChess:
         self.states_explored_by_depth = {}  # e.g. {1: 0, 2: 0, ...}
         self.total_branching_sum = 0
         self.minimax_calls = 0
+        self.last_move_info = None  # Track the most recent move and turn
 
     def init_board(self):
         state = {
@@ -191,9 +193,18 @@ class MiniChess:
         # If this is a real (non-simulation) move, log & update counters
         if not simulation:
 
+            self.update_move_counters(captured_piece)
+
+            # Store the last move info for end-of-game logs
+            current_player = "White" if piece[0] == 'w' else "Black"
+            if current_player == "White":
+                turn_number = WhiteMoveCounter
+            else:
+                turn_number = BlackMoveCounter
+            self.last_move_info = (current_player, turn_number, move)
+
             # Write move info to our trace file
             if log_move and self.trace_file_name:
-                current_player = "White" if piece[0] == 'w' else "Black"
 
                 # Convert from board indices to something like C3 -> C4
                 # Example: col -> letter, row -> number
@@ -203,19 +214,27 @@ class MiniChess:
                 end_row_num = str(5 - end_row)
 
                 action_str = f"Moved {piece} from {start_col_letter}{start_row_num} to {end_col_letter}{end_row_num}"
-
+                
                 with open(self.trace_file_name, "a") as f:
                     f.write("\n====================================\n")
                     f.write(f"Player: {current_player}\n")
+                    
                     if current_player == "White":
                         f.write(f"Turn #{WhiteMoveCounter}\n")
                     else:
                         f.write(f"Turn #{BlackMoveCounter}\n")
                     f.write(f"Action: {action_str}\n")
+                    
+                    if captured_piece != '.':
+                        f.write(f"Captured piece: {captured_piece}\n")
+                    
+                    if pawn_to_queen:
+                        f.write(f"Pawn Promotion: {piece} became a queen!\n")
+                    
                     # If AI info is provided, log it
                     if elapsed_time is not None:
                         f.write(f"Time for this action: {elapsed_time:.2f} sec\n")
-                    
+
                     #calcualting evaluation total of all the pieces on the board currently
                     total_eval = 0
                     for row in game_state["board"]: 
@@ -273,9 +292,6 @@ class MiniChess:
                             avg_branching = 0.0
                         f.write(f" - Average branching factor: {avg_branching:.1f}\n")
 
-            # if log_move:
-            #     self.log_move(piece, end_row, end_col, captured_piece, pawn_to_queen, piece_eliminated)
-
             # Update move counters and check for draw
             piece_eliminated = self.check_game_end_conditions(game_state, piece, end_row, end_col)
             self.update_move_counters(captured_piece)
@@ -317,47 +333,67 @@ class MiniChess:
         return game_state["board"][end_row][end_col]  # Return the piece that was eliminated (if any)    
     
     def end_game(self, message, log_message):
-        with open("COMP472_Project.txt", "a") as f:
-            f.write(f'GAME OVER: {log_message} \n')
+        """
+        Called when the game ends (king gone or draw).
+        Writes final result in trace_file_name with last move info & winner.
+        """
+        if self.trace_file_name:
+            with open(self.trace_file_name, "a") as f:
+                if self.last_move_info:
+                    winner, turn_num, last_move = self.last_move_info
+                    start, end = last_move
+                    start_col_letter = chr(ord('A') + start[1])
+                    end_col_letter = chr(ord('A') + end[1])
+                    start_row_num = str(5 - start[0])
+                    end_row_num = str(5 - end[0])
+                    final_move_str = f"({start_col_letter}{start_row_num} -> {end_col_letter}{end_row_num})"
+                    f.write(
+                        f"\n=== GAME OVER ===\n"
+                        f"Final result: {log_message}\n"
+                        f"Decision move: {final_move_str}\n"
+                        f"Occurred at turn #{turn_num}\n"
+                    )
+                else:
+                    # Fallback if no last_move_info
+                    f.write(f"\n=== GAME OVER ===\nFinal result: {log_message}\n")
+
         print(message)
         sys.exit(0)
 
-    def log_move(self, piece, end_row, end_col, captured_piece, pawn_to_queen, piece_eliminated):
-        move_code_letter = chr(ord('A') + end_col)
-        move_code_number = str(5 - end_row)
-        with open("COMP472_Project.txt", "a") as f:
-            if captured_piece != '.':
-                f.write(f'{piece} has moved to {move_code_letter}{move_code_number} and {piece_eliminated} is now eliminated from the game \n')
-            elif pawn_to_queen:
-                f.write(f'{piece} has moved to {move_code_letter}{move_code_number} and it has become a queen \n')
-            else:
-                f.write(f'{piece} has moved to {move_code_letter}{move_code_number} \n')
+    # def log_move(self, piece, end_row, end_col, captured_piece, pawn_to_queen, piece_eliminated):
+    #     move_code_letter = chr(ord('A') + end_col)
+    #     move_code_number = str(5 - end_row)
+    #     with open("COMP472_Project.txt", "a") as f:
+    #         if captured_piece != '.':
+    #             f.write(f'{piece} has moved to {move_code_letter}{move_code_number} and {piece_eliminated} is now eliminated from the game \n')
+    #         elif pawn_to_queen:
+    #             f.write(f'{piece} has moved to {move_code_letter}{move_code_number} and it has become a queen \n')
+    #         else:
+    #             f.write(f'{piece} has moved to {move_code_letter}{move_code_number} \n')
 
     def update_move_counters(self, captured_piece):
         global WhiteMoveCounter
         global BlackMoveCounter
-        global NumOfMoves
 
         if captured_piece != '.':
             self.move_counter = 0
         else:
             self.move_counter += 1
 
-        NumOfMoves = self.move_counter
-
         if self.current_game_state["turn"] == "white":
             WhiteMoveCounter += 1
-            with open("COMP472_Project.txt", "a") as f:
-                f.write(f"White Move Counter: {WhiteMoveCounter}\n")
         else:
             BlackMoveCounter += 1
-            with open("COMP472_Project.txt", "a") as f:
-                f.write(f"Black Move Counter: {BlackMoveCounter}\n")
 
     def check_for_draw(self):
-        if self.move_counter >= 10:
-            with open("COMP472_Project.txt", "a") as f:
-                f.write('GAME OVER: DRAW \n')
+        global move_counter
+        if move_counter > 10:
+            if self.trace_file_name:
+                with open(self.trace_file_name, "a") as f:
+                    f.write("\n=== GAME OVER ===\nResult: DRAW\n")
+                    if self.last_move_info:
+                        player, turn_num, last_move = self.last_move_info
+                        f.write(f"Draw occurred after {player}'s turn at turn #{turn_num}\n")
             print("No one won... It's a draw!")
             sys.exit(0)
 
@@ -564,12 +600,11 @@ class MiniChess:
             # For modes involving an AI (either 'Player vs AI' or 'AI vs AI'), track the number of moves
             if mode == '2' or mode == '3':
                 global NumOfMoves
-                NumOfMoves += 1
                 # If the number of moves has reached the maximum limit, end the game
-                if NumOfMoves >= max_turns:
+                if NumOfMoves > max_turns and WhiteMoveCounter == BlackMoveCounter and WhiteMoveCounter > max_turns and BlackMoveCounter > max_turns:
                     print("Max number of turns reached. Exiting game.")
                     exit(1)
-
+                NumOfMoves += 1
 
     def use_minimax(self, game_state, alpha, beta, maximizing_player, start_time, chosen_heuristic):
         """
@@ -583,7 +618,7 @@ class MiniChess:
 
         # We'll increment depth by 1, but we often break sooner if the time limit is reached
         while depth <= 25:
-            print(f"Minimax running at depth {depth}")
+
             current_eval, current_move = self.minimax(game_state, depth, alpha, beta, maximizing_player, start_time, chosen_heuristic)
 
             # If we found a move at this depth, update the best found so far
@@ -682,6 +717,10 @@ class MiniChess:
 
         # Generate all possible valid moves for the current player
         all_moves = self.valid_moves(game_state)
+
+        # Count these as a branching opportunity (one node branching into len(all_moves) children)
+        self.total_branching_sum += len(all_moves)
+        self.minimax_calls += 1
 
         # 2) If the king is in danger, we want to filter moves that fix this problem
         king_danger = self.is_king_in_danger(game_state, king_color)
