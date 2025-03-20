@@ -27,6 +27,12 @@ class MiniChess:
         # Simple cache to remember positions
         self.transposition_table = {}
 
+        # New attributes for AI stats
+        self.cumulative_states_explored = 0
+        self.states_explored_by_depth = {}  # e.g. {1: 0, 2: 0, ...}
+        self.total_branching_sum = 0
+        self.minimax_calls = 0
+
     def init_board(self):
         state = {
             "board":
@@ -239,6 +245,33 @@ class MiniChess:
                     f.write("New Board Configuration:\n")
                     for row_data in game_state["board"]:
                         f.write(" ".join(row_data) + "\n")
+
+                    global mode
+                    # Example of AI-specific cumulative info
+                    if ((current_player.lower() == self.ai_color) or (current_player.lower() == self.ai_colorH)) and mode in ['2', '3']:
+                        f.write("\nAI Cumulative Info:\n")
+                        # (a) number of states explored
+                        f.write(f" - Cumulative states explored: {self.format_number(self.cumulative_states_explored)}\n")
+
+                        # (b) states by depth (e.g. 1=144, 2=1.1k,...)
+                        states_by_depth_str = ", ".join(
+                            f"{d}={self.format_number(count)}" for d, count in sorted(self.states_explored_by_depth.items())
+                        )
+                        f.write(f" - Cumulative states explored by depth: {states_by_depth_str}\n")
+
+                        # (c) percentages by depth
+                        total_states = float(self.cumulative_states_explored) if self.cumulative_states_explored else 1.0
+                        percents_by_depth_str = ", ".join(
+                            f"{d}={((count / total_states) * 100):.1f}%" for d, count in sorted(self.states_explored_by_depth.items())
+                        )
+                        f.write(f" - Cumulative % states explored by depth: {percents_by_depth_str}\n")
+
+                        # (d) average branching factor
+                        if self.minimax_calls > 0:
+                            avg_branching = self.total_branching_sum / float(self.minimax_calls)
+                        else:
+                            avg_branching = 0.0
+                        f.write(f" - Average branching factor: {avg_branching:.1f}\n")
 
             # if log_move:
             #     self.log_move(piece, end_row, end_col, captured_piece, pawn_to_queen, piece_eliminated)
@@ -618,6 +651,14 @@ class MiniChess:
           5) Use alpha-beta pruning if selected.
         """
 
+        # Each time we enter a node, we add 1 to cumulative_states_explored
+        self.cumulative_states_explored += 1
+
+        # Track by depth
+        if depth not in self.states_explored_by_depth:
+            self.states_explored_by_depth[depth] = 0
+        self.states_explored_by_depth[depth] += 1
+
         # 1) Early-stop if we've reached the limit in depth, the king is gone, or we've hit our time limit
         if depth == 0 or not self.king_exists(game_state, simulation=True) or (time.time() - start_time) >= TIME_LIMIT:
             if chosen_heuristic == 'e1':
@@ -779,6 +820,15 @@ class MiniChess:
 
         board_eval = white_score - black_score
         return board_eval if self.ai_color == "white" else -board_eval
+
+    # Helper to format large numbers into e.g. 1.2k, 2.2M, etc.
+    def format_number(self, num):
+        if num >= 1_000_000:
+            return f"{num / 1_000_000:.1f}M"
+        elif num >= 1_000:
+            return f"{num / 1_000:.1f}k"
+        else:
+            return str(num)
 
 
 if __name__ == "__main__":
