@@ -5,13 +5,14 @@ import argparse
 import sys, traceback
 
 NumOfMoves = 0
-WhiteMoveCounter = 0
-BlackMoveCounter = 0
-TIME_LIMIT = 0  # Time limit in seconds for the AI to make a move
+WhiteMoveCounter = 1
+BlackMoveCounter = 1
+TIME_LIMIT = 0  
 player1_color = 'w'
 algorithm = None
 max_turns = 10
 mode = None
+chosen_heuristic = 'e0'
 chosen_heuristic_1 = 'e0'
 chosen_heuristic_2 = 'e0'
 
@@ -19,14 +20,12 @@ class MiniChess:
     def __init__(self):
         self.current_game_state = self.init_board()
         self.new_game_state = self.init_board()
-        self.heuristic_name = "e0"
         self.move_counter = 0
         self.ai_color = None
         self.ai_colorH = None
-
+        self.trace_file_name = None
         # Simple cache to remember positions
         self.transposition_table = {}
-
 
     def init_board(self):
         state = {
@@ -150,8 +149,13 @@ class MiniChess:
                     break  # Stop if out of bounds
         return moves
 
-    def make_move(self, game_state, move, log_move=True, simulation=False):
-        
+    def make_move(self, game_state, move, log_move=True, simulation=False,
+                  elapsed_time=None, ai_eval_score=None, ai_final_score=None):
+        """
+        elapsed_time: time in seconds for the AI move
+        ai_eval_score: heuristic score of the resulting board
+        ai_final_score: final minimax/alpha-beta search score
+        """
         global WhiteMoveCounter
         global BlackMoveCounter
         global NumOfMoves
@@ -178,15 +182,69 @@ class MiniChess:
 
         pawn_to_queen = self.handle_pawn_promotion(game_state)
 
-        # Prevent simulation moves from affecting real game state
+        # If this is a real (non-simulation) move, log & update counters
         if not simulation:
-            # Check for game-ending conditions
-            piece_eliminated = self.check_game_end_conditions(game_state, piece, end_row, end_col)
 
-            if log_move:
-                self.log_move(piece, end_row, end_col, captured_piece, pawn_to_queen, piece_eliminated)
+            # Write move info to our trace file
+            if log_move and self.trace_file_name:
+                current_player = "White" if piece[0] == 'w' else "Black"
+
+                # Convert from board indices to something like C3 -> C4
+                # Example: col -> letter, row -> number
+                start_col_letter = chr(ord('A') + start_col)
+                end_col_letter = chr(ord('A') + end_col)
+                start_row_num = str(5 - start_row)
+                end_row_num = str(5 - end_row)
+
+                action_str = f"Moved {piece} from {start_col_letter}{start_row_num} to {end_col_letter}{end_row_num}"
+
+                with open(self.trace_file_name, "a") as f:
+                    f.write("\n====================================\n")
+                    f.write(f"Player: {current_player}\n")
+                    if current_player == "White":
+                        f.write(f"Turn #{WhiteMoveCounter}\n")
+                    else:
+                        f.write(f"Turn #{BlackMoveCounter}\n")
+                    f.write(f"Action: {action_str}\n")
+                    # If AI info is provided, log it
+                    if elapsed_time is not None:
+                        f.write(f"Time for this action: {elapsed_time:.2f} sec\n")
+                    
+                    #calcualting evaluation total of all the pieces on the board currently
+                    total_eval = 0
+                    for row in game_state["board"]: 
+                        for piece in row:
+                            if piece == 'wp':
+                                total_eval += 1
+                            elif piece == 'wB' or piece == 'wN':
+                                total_eval += 3
+                            elif piece == 'wQ':
+                                total_eval += 9
+                            elif piece == 'wK':
+                                total_eval += 999
+                            elif piece == 'bp':
+                                total_eval -= 1
+                            elif piece == 'bB' or piece == 'bN':
+                                total_eval -= 3
+                            elif piece == 'bQ':
+                                total_eval -= 9
+                            elif piece == 'bK':
+                                total_eval -= 999
+                    if total_eval is not None:
+                        f.write(f"Heuristic score of resulting board: {total_eval}\n")
+                    if ai_final_score is not None:
+                        f.write(f"Minimax/Alpha-Beta search score: {ai_final_score}\n")
+
+                    # Show new board configuration
+                    f.write("New Board Configuration:\n")
+                    for row_data in game_state["board"]:
+                        f.write(" ".join(row_data) + "\n")
+
+            # if log_move:
+            #     self.log_move(piece, end_row, end_col, captured_piece, pawn_to_queen, piece_eliminated)
 
             # Update move counters and check for draw
+            piece_eliminated = self.check_game_end_conditions(game_state, piece, end_row, end_col)
             self.update_move_counters(captured_piece)
             self.check_for_draw()
 
@@ -264,7 +322,7 @@ class MiniChess:
                 f.write(f"Black Move Counter: {BlackMoveCounter}\n")
 
     def check_for_draw(self):
-        if self.move_counter >= 10 or NumOfMoves >= max_turns:
+        if self.move_counter >= 10:
             with open("COMP472_Project.txt", "a") as f:
                 f.write('GAME OVER: DRAW \n')
             print("No one won... It's a draw!")
@@ -315,7 +373,7 @@ class MiniChess:
               "\n2. Player vs AI"
               "\n3. AI vs AI")
 
-        global mode, algorithm, player1_color, TIME_LIMIT, max_turns, chosen_heuristic_1, chosen_heuristic_2
+        global mode, algorithm, player1_color, TIME_LIMIT, max_turns, chosen_heuristic, chosen_heuristic_1, chosen_heuristic_2
 
         mode = input("Enter the mode number: ")
         if mode == '1':
@@ -385,7 +443,10 @@ class MiniChess:
             f.write(f" - Max Turns (m): {max_turns}\n")
             f.write(f" - Player 1 color: {player1_name.upper()}\n")
             if mode == '2':
-                f.write(" - Player 1 = AI & Player 2 = Human\n")
+                if player1_color == 'w':
+                    f.write(" - Player 1 = Human & Player 2 = AI\n")
+                else:
+                    f.write(" - Player 1 = AI & Player 2 = Human\n")
             elif mode == '3':
                 f.write(" - Player 1 = AI & Player 2 = AI\n")
             else:
@@ -428,7 +489,8 @@ class MiniChess:
 
                 print(f"AI ({self.current_game_state['turn']}) move: {move}")
                 # Apply the chosen move to the current game state
-                self.current_game_state = self.make_move(self.current_game_state, move, simulation=False)
+                elapsed_time = time.time() - start_time
+                self.current_game_state = self.make_move(self.current_game_state, move, simulation=False, elapsed_time=elapsed_time, ai_eval_score=best_eval, ai_final_score=best_eval)
 
             elif self.current_game_state['turn'] == self.ai_color:
                 # If we are in 'Player vs AI' mode and it's AI's turn
@@ -436,7 +498,7 @@ class MiniChess:
                 start_time = time.time()
 
                 # Determine if the AI is maximizing (if it is playing as white)
-                best_eval, move = self.use_minimax(self.current_game_state, alpha=-math.inf, beta=math.inf, maximizing_player=(self.ai_color == 'white'), start_time=start_time)
+                best_eval, move = self.use_minimax(self.current_game_state, alpha=-math.inf, beta=math.inf, maximizing_player=(self.ai_color == 'white'), start_time=start_time, chosen_heuristic=chosen_heuristic)
 
                 if move is None:
                     print(f"AI ({self.ai_color}) has no valid moves. It loses!")
@@ -444,7 +506,8 @@ class MiniChess:
 
                 print(f"AI ({self.ai_color}) move: {move}")
                 # Apply the AI's chosen move
-                self.current_game_state = self.make_move(self.current_game_state, move, simulation=False)
+                elapsed_time = time.time() - start_time
+                self.current_game_state = self.make_move(self.current_game_state, move, simulation=False, elapsed_time=elapsed_time, ai_eval_score=best_eval, ai_final_score=best_eval)
 
             else:
                 # If it's not AI vs AI and not AI's turn, then it's a human player's turn
@@ -485,8 +548,8 @@ class MiniChess:
         best_eval = -math.inf if maximizing_player else math.inf
         depth = 1
 
-        # We'll increment depth by 1 until we reach 50, but we often break sooner if the time limit is reached
-        while depth <= 50:
+        # We'll increment depth by 1, but we often break sooner if the time limit is reached
+        while depth <= 25:
             print(f"Minimax running at depth {depth}")
             current_eval, current_move = self.minimax(game_state, depth, alpha, beta, maximizing_player, start_time, chosen_heuristic)
 
@@ -628,7 +691,7 @@ class MiniChess:
         # Evaluate each move in the chosen set
         for move in moves:
             # If our time is about to run out, break early to avoid going over time
-            if (time.time() - start_time) >= TIME_LIMIT - 0.12:
+            if (time.time() - start_time) >= TIME_LIMIT - 0.15:
                 break
 
             # Simulate the move
