@@ -193,8 +193,6 @@ class MiniChess:
         # If this is a real (non-simulation) move, log & update counters
         if not simulation:
 
-            self.update_move_counters(captured_piece)
-
             # Store the last move info for end-of-game logs
             current_player = "White" if piece[0] == 'w' else "Black"
             if current_player == "White":
@@ -360,17 +358,6 @@ class MiniChess:
         print(message)
         sys.exit(0)
 
-    # def log_move(self, piece, end_row, end_col, captured_piece, pawn_to_queen, piece_eliminated):
-    #     move_code_letter = chr(ord('A') + end_col)
-    #     move_code_number = str(5 - end_row)
-    #     with open("COMP472_Project.txt", "a") as f:
-    #         if captured_piece != '.':
-    #             f.write(f'{piece} has moved to {move_code_letter}{move_code_number} and {piece_eliminated} is now eliminated from the game \n')
-    #         elif pawn_to_queen:
-    #             f.write(f'{piece} has moved to {move_code_letter}{move_code_number} and it has become a queen \n')
-    #         else:
-    #             f.write(f'{piece} has moved to {move_code_letter}{move_code_number} \n')
-
     def update_move_counters(self, captured_piece):
         global WhiteMoveCounter
         global BlackMoveCounter
@@ -386,8 +373,7 @@ class MiniChess:
             BlackMoveCounter += 1
 
     def check_for_draw(self):
-        global move_counter
-        if move_counter > 10:
+        if self.move_counter >= 10:
             if self.trace_file_name:
                 with open(self.trace_file_name, "a") as f:
                     f.write("\n=== GAME OVER ===\nResult: DRAW\n")
