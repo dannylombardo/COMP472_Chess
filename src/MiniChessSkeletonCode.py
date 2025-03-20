@@ -7,17 +7,19 @@ import sys, traceback
 NumOfMoves = 0
 WhiteMoveCounter = 0
 BlackMoveCounter = 0
-TIME_LIMIT = 5  # Time limit in seconds for the AI to make a move
-player1_color = None
+TIME_LIMIT = 0  # Time limit in seconds for the AI to make a move
+player1_color = 'w'
 algorithm = None
-max_turns = 0
+max_turns = 10
 mode = None
+chosen_heuristic_1 = 'e0'
+chosen_heuristic_2 = 'e0'
 
 class MiniChess:
     def __init__(self):
         self.current_game_state = self.init_board()
         self.new_game_state = self.init_board()
-
+        self.heuristic_name = "e0"
         self.move_counter = 0
         self.ai_color = None
         self.ai_colorH = None
@@ -312,7 +314,9 @@ class MiniChess:
               "\n1. Player vs Player"
               "\n2. Player vs AI"
               "\n3. AI vs AI")
-        global mode
+
+        global mode, algorithm, player1_color, TIME_LIMIT, max_turns, chosen_heuristic_1, chosen_heuristic_2
+
         mode = input("Enter the mode number: ")
         if mode == '1':
             print("Player vs Player mode selected.")
@@ -326,7 +330,6 @@ class MiniChess:
 
         if mode == '2' or mode == '3':
             print("Which color should player 1 be? (w/b): ")
-            global player1_color
             player1_color = input().strip().lower()
             if player1_color == 'w':
                 print("Player 1 is white and starts first.")
@@ -343,21 +346,59 @@ class MiniChess:
                 exit(1)
 
             print("Do you want minimax or alpha-beta pruning? (m/a): ")
-            global algorithm
             algorithm = input().strip().lower()
             if algorithm not in ['m', 'a']:
                 print("Invalid algorithm. Exiting game.")
                 exit(1)
 
             print("Select timeout time for the AI: ")
-            global TIME_LIMIT
             TIME_LIMIT = int(input().strip())
 
             print("Select max number of turns (in total): ")
-            global max_turns
             max_turns = int(input().strip())
 
+            print(f"Choose a heuristic between e0, e1, e2 for AI {self.ai_color}:")
+            chosen_heuristic_1 = input().strip().lower()
+            if chosen_heuristic_1 not in ['e0', 'e1', 'e2']:
+                print("Invalid heuristic. Exiting game.")
+                exit(1)
+            if mode == '3':
+                print(f"Chose a heuristic for the second AI {self.ai_colorH}: ")
+                chosen_heuristic_2 = input().strip().lower()
+                if chosen_heuristic_2 not in ['e0', 'e1', 'e2']:
+                    print("Invalid heuristic. Exiting game.")
+                    exit(1)
+
         print("Enter 'exit' to quit the game.")
+
+        # Determine the flag for alpha-beta
+        alpha_beta_on = (algorithm == 'a')
+        # Build the trace file name
+        self.trace_file_name = f"gameTrace-{str(alpha_beta_on).lower()}-{TIME_LIMIT}-{max_turns}.txt"
+
+        player1_name = "White" if player1_color == 'w' else "Black"
+
+        # Write initial game parameters to trace file
+        with open(self.trace_file_name, "w") as f:
+            f.write(f"Game Parameters:\n")
+            f.write(f" - Timeout (t): {TIME_LIMIT}\n")
+            f.write(f" - Max Turns (m): {max_turns}\n")
+            f.write(f" - Player 1 color: {player1_name.upper()}\n")
+            if mode == '2':
+                f.write(" - Player 1 = AI & Player 2 = Human\n")
+            elif mode == '3':
+                f.write(" - Player 1 = AI & Player 2 = AI\n")
+            else:
+                f.write(" - Player 1 = Human & Player 2 = Human\n")
+            f.write(f" - Alpha-Beta: {alpha_beta_on}\n")
+            # Example: using a placeholder for your heuristic name
+            if mode in ['2', '3'] and hasattr(self, "heuristic_name"):
+                f.write(f" - AI (one) Heuristic: {chosen_heuristic_1}\n")
+                if mode == '3':
+                    f.write(f" - AI (two) Heuristic: {chosen_heuristic_2}\n")
+            f.write("\nInitial Board Configuration:\n")
+            for row in self.current_game_state["board"]:
+                f.write(" ".join(row) + "\n")
 
         while True:
             # Display the current state of the board each time before a move
@@ -372,8 +413,13 @@ class MiniChess:
                 # Typically, white is considered the maximizing player
                 ai_is_white = (self.current_game_state['turn'] == 'white')
                 
+                if (self.current_game_state['turn'] == self.ai_color):
+                    chosen_heuristic = chosen_heuristic_1
+                else:
+                    chosen_heuristic = chosen_heuristic_2
+
                 # Use the minimax (or alpha-beta) approach to find the best move
-                best_eval, move = self.use_minimax(self.current_game_state, alpha=-math.inf, beta=math.inf, maximizing_player=ai_is_white, start_time=start_time)
+                best_eval, move = self.use_minimax(self.current_game_state, alpha=-math.inf, beta=math.inf, maximizing_player=ai_is_white, start_time=start_time, chosen_heuristic=chosen_heuristic)
 
                 # If the AI has no valid moves, it loses
                 if move is None:
@@ -428,7 +474,8 @@ class MiniChess:
                     print("Max number of turns reached. Exiting game.")
                     exit(1)
 
-    def use_minimax(self, game_state, alpha, beta, maximizing_player, start_time):
+
+    def use_minimax(self, game_state, alpha, beta, maximizing_player, start_time, chosen_heuristic):
         """
         Initiates a minimax (or alpha-beta if chosen) search to find the best move 
         for the current player. We iteratively deepen up to depth 50 or until the time limit expires.
@@ -441,7 +488,7 @@ class MiniChess:
         # We'll increment depth by 1 until we reach 50, but we often break sooner if the time limit is reached
         while depth <= 50:
             print(f"Minimax running at depth {depth}")
-            current_eval, current_move = self.minimax(game_state, depth, alpha, beta, maximizing_player, start_time)
+            current_eval, current_move = self.minimax(game_state, depth, alpha, beta, maximizing_player, start_time, chosen_heuristic)
 
             # If we found a move at this depth, update the best found so far
             if current_move is not None:
@@ -493,7 +540,7 @@ class MiniChess:
         return False
 
 
-    def minimax(self, game_state, depth, alpha, beta, maximizing_player, start_time):
+    def minimax(self, game_state, depth, alpha, beta, maximizing_player, start_time, chosen_heuristic):
         """
         Core minimax (or alpha-beta) search:
           1) We terminate (return an evaluation score) if we reach depth 0, 
@@ -510,7 +557,13 @@ class MiniChess:
 
         # 1) Early-stop if we've reached the limit in depth, the king is gone, or we've hit our time limit
         if depth == 0 or not self.king_exists(game_state, simulation=True) or (time.time() - start_time) >= TIME_LIMIT:
-            return self.evaluate_board(game_state), None
+            if chosen_heuristic == 'e1':
+                return self.evaluate_board_e1(game_state), None
+            elif chosen_heuristic == 'e2':
+                return self.evaluate_board_e2(game_state), None
+            else:
+                return self.evaluate_board_e0(game_state), None
+            
 
         # Determine the current king's color and the opponent's color
         king_color = 'w' if game_state['turn'] == "white" else 'b'
@@ -583,7 +636,7 @@ class MiniChess:
             new_game_state = self.make_move(new_game_state, move, log_move=False, simulation=True)
 
             # Recursively call minimax (with one less depth) and toggling maximizing_player
-            eval_score, _ = self.minimax(new_game_state, depth - 1, alpha, beta, not maximizing_player, start_time)
+            eval_score, _ = self.minimax(new_game_state, depth - 1, alpha, beta, not maximizing_player, start_time, chosen_heuristic)
             move_evaluations.append((move, eval_score))
 
             # 4) Alpha-beta pruning logic if algorithm == 'a'
@@ -644,7 +697,7 @@ class MiniChess:
 
         return best_eval, best_move
 
-    def evaluate_board(self, game_state):
+    def evaluate_board_e0(self, game_state):
         e0 = {
             'wp': 1, 'wB': 3, 'wN': 3, 'wQ': 9, 'wK': 999,
             'bp': 1, 'bB': 3, 'bN': 3, 'bQ': 9, 'bK': 999
