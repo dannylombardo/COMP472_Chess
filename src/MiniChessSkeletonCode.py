@@ -792,33 +792,33 @@ class MiniChess:
             if game_state['turn'] == "white":
                 # This means white is playing, so we sort in descending order to get the highest eval first
                 move_evaluations.sort(key=lambda x: x[1], reverse=True)                
-                print(f"TRUE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
-                for mv, eval_score in move_evaluations:
-                    print(f"Move: {mv} - Eval: {eval_score}")
+                # print(f"TRUE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
+                # for mv, eval_score in move_evaluations:
+                #     print(f"Move: {mv} - Eval: {eval_score}")
 
             else:
                 # If black is playing (and player1 is still white), we also sort in descending order 
                 # but the logic might lean differently based on your approach
                 move_evaluations.sort(key=lambda x: x[1], reverse=True)
-                print(f"notFALSE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
-                for mv, eval_score in move_evaluations:
-                    print(f"Move: {mv} - Eval: {eval_score}")
+                # print(f"notFALSE Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
+                # for mv, eval_score in move_evaluations:
+                #     print(f"Move: {mv} - Eval: {eval_score}")
 
         else:
             # If the player 1 color is black:
             if game_state['turn'] == "black":
                 # Sort in ascending order for black if we consider black as the minimizing side
                 move_evaluations.sort(key=lambda x: x[1], reverse=False)
-                print(f"FALSE2 Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
-                for mv, eval_score in move_evaluations:
-                    print(f"Move: {mv} - Eval: {eval_score}")
+                # print(f"FALSE2 Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
+                # for mv, eval_score in move_evaluations:
+                #     print(f"Move: {mv} - Eval: {eval_score}")
 
             else:
                 # Otherwise sort in descending for white
                 move_evaluations.sort(key=lambda x: x[1], reverse=True)
-                print(f"TRUE2 Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
-                for mv, eval_score in move_evaluations:
-                    print(f"Move: {mv} - Eval: {eval_score}")
+                # print(f"TRUE2 Move evaluations at depth {depth} for {game_state['turn']} ({'max' if maximizing_player else 'min'}):")
+                # for mv, eval_score in move_evaluations:
+                #     print(f"Move: {mv} - Eval: {eval_score}")
 
 
         # After sorting, the first element in move_evaluations is the best move for the current side
