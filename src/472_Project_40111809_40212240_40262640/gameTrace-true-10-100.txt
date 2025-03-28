@@ -1,0 +1,143 @@
+Game Parameters:
+ - Timeout (t): 10
+ - Max Turns (m): 100
+ - Player 1 color: WHITE
+ - Player 1 = AI & Player 2 = AI
+ - Alpha-Beta: True
+ - AI (one) Heuristic: e0
+ - AI (two) Heuristic: e0
+
+Initial Board Configuration:
+bK bQ bB bN .
+. . bp bp .
+. . . . .
+. wp wp . .
+. wN wB wQ wK
+
+====================================
+Player: White
+Turn #1
+Action: Moved wp from B2 to B3
+Time for this action: 0.04 sec
+Heuristic score of resulting board: 0
+Minimax/Alpha-Beta search score: 1
+New Board Configuration:
+bK bQ bB bN .
+. . bp bp .
+. wp . . .
+. . wp . .
+. wN wB wQ wK
+
+AI Cumulative Info:
+ - Cumulative states explored: 53
+ - Cumulative states explored by depth: 0=38, 1=14, 2=1
+ - Cumulative % states explored by depth: 0=71.7%, 1=26.4%, 2=1.9%
+ - Average branching factor: 13.1
+
+====================================
+Player: Black
+Turn #1
+Action: Moved bQ from B5 to B3
+Captured piece: wp
+Time for this action: 0.03 sec
+Heuristic score of resulting board: -1
+Minimax/Alpha-Beta search score: 1
+New Board Configuration:
+bK . bB bN .
+. . bp bp .
+. bQ . . .
+. . wp . .
+. wN wB wQ wK
+
+AI Cumulative Info:
+ - Cumulative states explored: 81
+ - Cumulative states explored by depth: 0=51, 1=28, 2=2
+ - Cumulative % states explored by depth: 0=63.0%, 1=34.6%, 2=2.5%
+ - Average branching factor: 14.1
+
+====================================
+Player: White
+Turn #2
+Action: Moved wp from C2 to C3
+Time for this action: 0.04 sec
+Heuristic score of resulting board: -1
+Minimax/Alpha-Beta search score: 10
+New Board Configuration:
+bK . bB bN .
+. . bp bp .
+. bQ wp . .
+. . . . .
+. wN wB wQ wK
+
+AI Cumulative Info:
+ - Cumulative states explored: 132
+ - Cumulative states explored by depth: 0=85, 1=44, 2=3
+ - Cumulative % states explored by depth: 0=64.4%, 1=33.3%, 2=2.3%
+ - Average branching factor: 16.1
+
+====================================
+Player: Black
+Turn #2
+Action: Moved bQ from B3 to D1
+Captured piece: wQ
+Time for this action: 0.05 sec
+Heuristic score of resulting board: -10
+Minimax/Alpha-Beta search score: 9
+New Board Configuration:
+bK . bB bN .
+. . bp bp .
+. . wp . .
+. . . . .
+. wN wB bQ wK
+
+AI Cumulative Info:
+ - Cumulative states explored: 189
+ - Cumulative states explored by depth: 0=120, 1=65, 2=4
+ - Cumulative % states explored by depth: 0=63.5%, 1=34.4%, 2=2.1%
+ - Average branching factor: 15.9
+
+====================================
+Player: White
+Turn #3
+Action: Moved wN from B1 to A3
+Time for this action: 0.02 sec
+Heuristic score of resulting board: -10
+Minimax/Alpha-Beta search score: 1009
+New Board Configuration:
+bK . bB bN .
+. . bp bp .
+wN . wp . .
+. . . . .
+. . wB bQ wK
+
+AI Cumulative Info:
+ - Cumulative states explored: 211
+ - Cumulative states explored by depth: 0=130, 1=76, 2=5
+ - Cumulative % states explored by depth: 0=61.6%, 1=36.0%, 2=2.4%
+ - Average branching factor: 16.0
+
+====================================
+Player: Black
+Turn #3
+Action: Moved bQ from D1 to E1
+Captured piece: wK
+Time for this action: 0.00 sec
+Heuristic score of resulting board: -1009
+Minimax/Alpha-Beta search score: 1009
+New Board Configuration:
+bK . bB bN .
+. . bp bp .
+wN . wp . .
+. . . . .
+. . wB . bQ
+
+AI Cumulative Info:
+ - Cumulative states explored: 214
+ - Cumulative states explored by depth: 0=130, 1=78, 2=6
+ - Cumulative % states explored by depth: 0=60.7%, 1=36.4%, 2=2.8%
+ - Average branching factor: 16.0
+
+=== GAME OVER ===
+Final result: BLACK WINS
+Decision move: (D1 -> E1)
+Occurred at turn #3

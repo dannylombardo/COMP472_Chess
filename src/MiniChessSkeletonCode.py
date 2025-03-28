@@ -645,7 +645,7 @@ class MiniChess:
         depth = 1
 
         # We'll increment depth by 1, but we often break sooner if the time limit is reached
-        while depth <= 25:
+        while depth <= 2:
 
             current_eval, current_move = self.minimax(game_state, depth, alpha, beta, maximizing_player, start_time)
 
